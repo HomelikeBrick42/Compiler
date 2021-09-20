@@ -19,33 +19,22 @@ int main(int argc, char** argv) {
         *code++          = Op_Push;
         *(uint64_t*)code = sizeof(int64_t); // Size
         code += sizeof(uint64_t);
-        *(int64_t*)code = 21; // Value
+        *(int64_t*)code = 5; // Value
         code += sizeof(int64_t);
 
-        *code++                 = Op_Call;
-        uint64_t* callLocation1 = (uint64_t*)code; // Location
+        *code++                = Op_Call;
+        uint64_t* callLocation = (uint64_t*)code; // Location
         code += sizeof(uint64_t);
         *(uint64_t*)code = sizeof(int64_t); // Arg size
         code += sizeof(uint64_t);
 
-        *code++          = Op_Push;
-        *(uint64_t*)code = sizeof(int64_t); // Size
-        code += sizeof(uint64_t);
-        *(int64_t*)code = 6; // Value
-        code += sizeof(int64_t);
-
-        *code++                 = Op_Call;
-        uint64_t* callLocation2 = (uint64_t*)code; // Location
-        code += sizeof(uint64_t);
-        *(uint64_t*)code = sizeof(int64_t); // Arg size
-        code += sizeof(uint64_t);
+        *code++ = Op_PrintI64;
 
         *code++ = Op_Exit;
 
         // Setup call instruction locations
         uint64_t functionLocation = code - codeBlock;
-        *callLocation1            = functionLocation;
-        *callLocation2            = functionLocation;
+        *callLocation             = functionLocation;
 
         // Function
         *code++          = Op_Load;
@@ -54,15 +43,53 @@ int main(int argc, char** argv) {
         *(uint64_t*)code = sizeof(int64_t); // Size
         code += sizeof(uint64_t);
 
+        *code++          = Op_Push;
+        *(uint64_t*)code = sizeof(int64_t); // Size
+        code += sizeof(uint64_t);
+        *(int64_t*)code = 1; // Value
+        code += sizeof(int64_t);
+
+        *code++ = Op_SubI64;
+
         *code++          = Op_Dup;
         *(uint64_t*)code = sizeof(int64_t); // Size
         code += sizeof(uint64_t);
 
-        *code++ = Op_AddI64;
+        *code++                    = Op_JumpZero;
+        uint64_t* zeroJumpLocation = (uint64_t*)code; // Location
+        code += sizeof(uint64_t);
+        *(uint64_t*)code = sizeof(int64_t); // Size
+        code += sizeof(uint64_t);
 
-        *code++ = Op_PrintI64;
+        *code++          = Op_Call;
+        *(uint64_t*)code = functionLocation; // Location
+        code += sizeof(uint64_t);
+        *(uint64_t*)code = sizeof(int64_t); // Arg size
+        code += sizeof(uint64_t);
 
-        *code++ = Op_Return;
+        *code++          = Op_Load;
+        *(uint64_t*)code = 0; // Offset
+        code += sizeof(uint64_t);
+        *(uint64_t*)code = sizeof(int64_t); // Size
+        code += sizeof(uint64_t);
+
+        *code++ = Op_MulI64;
+
+        *code++          = Op_Return;
+        *(uint64_t*)code = sizeof(int64_t); // Size
+        code += sizeof(uint64_t);
+
+        *zeroJumpLocation = code - codeBlock;
+
+        *code++          = Op_Push;
+        *(uint64_t*)code = sizeof(int64_t); // Size
+        code += sizeof(uint64_t);
+        *(int64_t*)code = 1; // Value
+        code += sizeof(int64_t);
+
+        *code++          = Op_Return;
+        *(uint64_t*)code = sizeof(int64_t); // Size
+        code += sizeof(uint64_t);
     }
 
     VM vm;
