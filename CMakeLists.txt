@@ -20,4 +20,6 @@ include_directories(src)
 
 add_executable(
         Compiler
-        src/Main.c)
+        src/Main.c
+        src/VM.c
+        src/VM.h)
