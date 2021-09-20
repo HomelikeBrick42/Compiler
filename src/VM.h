@@ -34,6 +34,8 @@ typedef struct VM {
     uint8_t* Code;
     uint64_t CodeSize;
     uint8_t* Ip;
+    uint8_t* Stack;
+    uint64_t StackSize;
     uint8_t* Sp;
     uint8_t* Bp;
 } VM;

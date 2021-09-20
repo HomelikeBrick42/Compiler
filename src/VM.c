@@ -14,21 +14,35 @@ bool VM_Create(VM* vm, uint8_t* code, uint64_t codeSize, uint64_t stackSize) {
     vm->CodeSize = codeSize;
     vm->Ip       = vm->Code;
 
-    vm->Sp = malloc(stackSize);
-    vm->Bp = vm->Sp;
-    if (!vm->Sp) {
+    vm->Stack = malloc(stackSize);
+    if (!vm->Stack) {
         return false;
     }
+
+    vm->StackSize = stackSize;
+    vm->Sp = vm->Stack;
+    vm->Bp = vm->Stack;
 
     return true;
 }
 
 void VM_Destroy(VM* vm) {
-    free(vm->Sp);
+    free(vm->Stack);
 }
 
 bool VM_Step(VM* vm) {
-    if ((uint64_t)(vm->Ip - vm->Code) >= vm->CodeSize) {
+    if (vm->Ip - vm->Code < 0 || (uint64_t)(vm->Ip - vm->Code) >= vm->CodeSize) {
+        fprintf(stderr, "Instruction out of range\n");
+        return false;
+    }
+
+    if (vm->Sp - vm->Stack < 0 || (uint64_t)(vm->Sp - vm->Stack) >= vm->StackSize) {
+        fprintf(stderr, "Stack pointer out of range\n");
+        return false;
+    }
+
+    if (vm->Bp - vm->Stack < 0 || (uint64_t)(vm->Bp - vm->Stack) >= vm->StackSize) {
+        fprintf(stderr, "Base stack pointer out of range\n");
         return false;
     }
 

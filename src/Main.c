@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
         *code++          = Op_Push;
         *(uint64_t*)code = sizeof(int64_t); // Size
         code += sizeof(uint64_t);
-        *(int64_t*)code = 5; // Value
+        *(int64_t*)code = 6; // Value
         code += sizeof(int64_t);
 
         *code++                = Op_Call;
