@@ -58,18 +58,96 @@ Token Parser_ExpectToken(Parser* parser, TokenKind expected) {
     }
 }
 
-AstStatement* Parser_ParseStatement(Parser* parser) {
-    AstExpression* expression = Parser_ParseExpression(parser);
-    if (expression->Kind == AstKind_Name && parser->Current.Kind == TokenKind_Colon) {
-        Token name = expression->Name.Token;
-        free(expression);
-        AstDeclaration* declaration = Parser_ParseDeclaration(parser, name);
-        Parser_ExpectToken(parser, TokenKind_Semicolon);
-        return declaration;
-    } else {
-        Parser_ExpectToken(parser, TokenKind_Semicolon);
-        return expression;
+AstScope* Parser_ParseFile(Parser* parser) {
+    AstScope* scope = calloc(1, sizeof(AstScope));
+    scope->Kind     = AstKind_Scope;
+
+    while (parser->Current.Kind != TokenKind_EndOfFile) {
+        scope->Scope.Statements = realloc(scope->Scope.Statements, (scope->Scope.StatementCount + 1) * sizeof(AstStatement*));
+        scope->Scope.Statements[scope->Scope.StatementCount] = Parser_ParseStatement(parser);
+        scope->Scope.StatementCount++;
     }
+
+    return scope;
+}
+
+AstStatement* Parser_ParseStatement(Parser* parser) {
+    switch (parser->Current.Kind) {
+        case TokenKind_Semicolon: {
+            Parser_ExpectToken(parser, TokenKind_Semicolon);
+            return Parser_ParseStatement(parser);
+        } break;
+
+        case TokenKind_KeywordIf: {
+            AstIf* iff = calloc(1, sizeof(AstIf));
+            iff->Kind = AstKind_If;
+            Parser_ExpectToken(parser, TokenKind_KeywordIf);
+            iff->If.Condition = Parser_ParseExpression(parser);
+            iff->If.ThenScope = Parser_ParseScope(parser);
+            if (parser->Current.Kind == TokenKind_KeywordElse) {
+                Parser_ExpectToken(parser, TokenKind_KeywordElse);
+                iff->If.ElseScope = Parser_ParseScope(parser);
+            }
+            return iff;
+        } break;
+
+        case TokenKind_KeywordPrint: {
+            AstPrint* print = calloc(1, sizeof(AstPrint));
+            print->Kind = AstKind_Print;
+            Parser_ExpectToken(parser, TokenKind_KeywordPrint);
+            print->Print.Value = Parser_ParseExpression(parser);
+            Parser_ExpectToken(parser, TokenKind_Semicolon);
+            return print;
+        } break;
+
+        case TokenKind_KeywordReturn: {
+            AstReturn* ret = calloc(1, sizeof(AstReturn));
+            ret->Kind = AstKind_Return;
+            Parser_ExpectToken(parser, TokenKind_KeywordReturn);
+            ret->Return.Value = Parser_ParseExpression(parser);
+            Parser_ExpectToken(parser, TokenKind_Semicolon);
+            return ret;
+        } break;
+
+        default: {
+            AstExpression* expression = Parser_ParseExpression(parser);
+            if (expression && expression->Kind == AstKind_Name && parser->Current.Kind == TokenKind_Colon) {
+                Token name = expression->Name.Token;
+                free(expression);
+                AstDeclaration* declaration = Parser_ParseDeclaration(parser, name);
+                Parser_ExpectToken(parser, TokenKind_Semicolon);
+                return declaration;
+            } else if (parser->Current.Kind == TokenKind_Equals) {
+                AstAssignment* assignment          = calloc(1, sizeof(AstAssignment));
+                assignment->Kind                   = AstKind_Assignment;
+                assignment->Assignment.Operand     = expression;
+                assignment->Assignment.EqualsToken = Parser_ExpectToken(parser, TokenKind_Equals);
+                assignment->Assignment.Value       = Parser_ParseExpression(parser);
+                Parser_ExpectToken(parser, TokenKind_Semicolon);
+                return assignment;
+            } else {
+                Parser_ExpectToken(parser, TokenKind_Semicolon);
+                return expression;
+            }
+        } break;
+    }
+}
+
+AstScope* Parser_ParseScope(Parser* parser) {
+    AstScope* scope = calloc(1, sizeof(AstScope));
+    scope->Kind     = AstKind_Scope;
+
+    Parser_ExpectToken(parser, TokenKind_OpenBrace);
+
+    while (parser->Current.Kind != TokenKind_CloseBrace && parser->Current.Kind != TokenKind_EndOfFile) {
+        scope->Scope.Statements = realloc(scope->Scope.Statements, (scope->Scope.StatementCount + 1) * sizeof(AstStatement*));
+        scope->Scope.Statements[scope->Scope.StatementCount] = Parser_ParseStatement(parser);
+        scope->Scope.StatementCount++;
+    }
+
+    Parser_ExpectToken(parser, TokenKind_CloseBrace);
+
+    return scope;
 }
 
 AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name) {
@@ -107,6 +185,45 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
             name->Kind       = AstKind_Name;
             name->Name.Token = Parser_ExpectToken(parser, TokenKind_Identifier);
             return name;
+        } break;
+
+        case TokenKind_OpenParenthesis: {
+            Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
+            AstExpression* expression = Parser_ParseExpression(parser);
+            if (expression && expression->Kind == AstKind_Name && parser->Current.Kind == TokenKind_Colon) {
+                AstProcedure* procedure = calloc(1, sizeof(AstProcedure));
+                procedure->Kind         = AstKind_Procedure;
+
+                Token firstName = expression->Name.Token;
+                free(expression);
+                AstDeclaration* firstDeclaration = Parser_ParseDeclaration(parser, firstName);
+
+                procedure->Procedure.Parameters     = malloc(1 * sizeof(AstDeclaration*));
+                procedure->Procedure.Parameters[0]  = firstDeclaration;
+                procedure->Procedure.ParameterCount = 1;
+
+                while (parser->Current.Kind != TokenKind_CloseParenthesis && parser->Current.Kind != TokenKind_EndOfFile) {
+                    Parser_ExpectToken(parser, TokenKind_Comma);
+                    procedure->Procedure.Parameters = realloc(
+                        procedure->Procedure.Parameters, (procedure->Procedure.ParameterCount + 1) * sizeof(AstDeclaration*));
+                    procedure->Procedure.Parameters[procedure->Procedure.ParameterCount] = firstDeclaration;
+                    procedure->Procedure.ParameterCount++;
+                }
+
+                Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
+
+                Parser_ExpectToken(parser, TokenKind_RightArrow);
+                procedure->Procedure.ReturnValue = Parser_ParseExpression(parser);
+
+                if (parser->Current.Kind == TokenKind_OpenBrace) {
+                    procedure->Procedure.Body = Parser_ParseScope(parser);
+                }
+
+                return procedure;
+            } else {
+                Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
+                return expression;
+            }
         } break;
 
         default: {
@@ -171,6 +288,26 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
     }
 
     while (true) {
+        if (parser->Current.Kind == TokenKind_OpenParenthesis) {
+            AstCall* call = calloc(1, sizeof(AstCall));
+            call->Kind = AstKind_Call;
+
+            Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
+
+            while (parser->Current.Kind != TokenKind_CloseParenthesis && parser->Current.Kind != TokenKind_EndOfFile) {
+                call->Call.Arguments = realloc(call->Call.Arguments, (call->Call.ArgumentCount + 1) * sizeof(AstExpression*));
+                call->Call.Arguments[call->Call.ArgumentCount] = Parser_ParseExpression(parser);
+                call->Call.ArgumentCount++;
+                if (parser->Current.Kind != TokenKind_CloseParenthesis) {
+                    Parser_ExpectToken(parser, TokenKind_Comma);
+                }
+            }
+
+            Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
+
+            return call;
+        }
+
         uint64_t binaryPrecedence = Parser_GetBinaryOperatorPrecedence(parser->Current.Kind);
         if (binaryPrecedence <= parentPrecedence) {
             break;

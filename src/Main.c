@@ -168,8 +168,8 @@ bool Parser_Test() {
         return false;
     }
 
-    AstStatement* statement = Parser_ParseStatement(&parser);
-    (void)statement;
+    AstScope* scope = Parser_ParseFile(&parser);
+    (void)scope;
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
 

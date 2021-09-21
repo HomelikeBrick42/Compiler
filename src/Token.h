@@ -14,6 +14,7 @@
     TOKEN_KIND(KeywordFalse, "false")    \
     TOKEN_KIND(KeywordIf, "if")          \
     TOKEN_KIND(KeywordElse, "else")      \
+    TOKEN_KIND(KeywordReturn, "return")  \
     TOKEN_KIND(KeywordPrint, "print")    \
     TOKEN_KIND(KeywordEnd, "")           \
                                          \
