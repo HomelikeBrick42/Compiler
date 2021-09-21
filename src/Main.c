@@ -1,5 +1,6 @@
 #include "VM.h"
 #include "Lexer.h"
+#include "Parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 
 bool VM_Test();
 bool Lexer_Test();
+bool Parser_Test();
 
 int main(int argc, char** argv) {
 #if 0
@@ -16,8 +18,14 @@ int main(int argc, char** argv) {
     }
 #endif
 
-#if 1
+#if 0
     if (!Lexer_Test()) {
+        return EXIT_FAILURE;
+    }
+#endif
+
+#if 1
+    if (!Parser_Test()) {
         return EXIT_FAILURE;
     }
 #endif
@@ -150,6 +158,22 @@ bool Lexer_Test() {
     bool success = !lexer.WasError;
 
     Lexer_Destroy(&lexer);
+
+    return success;
+}
+
+bool Parser_Test() {
+    Parser parser;
+    if (!Parser_Create(&parser, "./test.lang")) {
+        return false;
+    }
+
+    AstExpression* expression = Parser_ParseExpression(&parser);
+    (void)expression;
+
+    bool success = !parser.WasError && !parser.Lexer.WasError;
+
+    Parser_Destroy(&parser);
 
     return success;
 }

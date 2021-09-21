@@ -1,3 +1,6 @@
+1 + 2 * 3
+
+/*
 factorial: (n: int) -> int = (n: int) -> int {
     if n == 1 {
         return 1;
@@ -12,3 +15,4 @@ print c;
 c: int = b;
 c = c - a;
 print c;
+*/

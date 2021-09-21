@@ -25,7 +25,9 @@ add_executable(
         src/Lexer.c
         src/Lexer.h
         src/Main.c
+        src/Parser.c
+        src/Parser.h
         src/Token.c
         src/Token.h
         src/VM.c
-        src/VM.h src/Ast.c)
+        src/VM.h)

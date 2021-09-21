@@ -65,7 +65,7 @@ typedef struct Ast Ast;
 
 #define AST_KIND_BEGIN(name) typedef Ast Ast##name;
 #define AST_KIND_END(name)
-#define AST_KIND(name, data)
+#define AST_KIND(name, data) typedef Ast Ast##name;
 AST_KINDS
 #undef AST_KIND
 #undef AST_KIND_END
