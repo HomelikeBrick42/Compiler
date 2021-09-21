@@ -1,4 +1,4 @@
-// All types are explicit because there is no type inference
+// All types are explicit because there is no type inference yet
 
 factorial: (n: int) -> int : (n: int) -> int {
     if n == 1 {
