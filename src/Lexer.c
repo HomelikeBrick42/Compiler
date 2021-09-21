@@ -148,9 +148,41 @@ Start:
 
                 MATCH1(TokenKind_Plus, '+');
                 MATCH1(TokenKind_Asterisk, '*');
-                MATCH1(TokenKind_Slash, '/');
 
 #undef MATCH1
+
+            case '/': {
+                Lexer_ExpectChar(lexer, '/');
+                if (lexer->Current == '/') {
+                    Lexer_ExpectChar(lexer, '/');
+                    while (lexer->Current != '\n' && lexer->Current != '\0') {
+                        Lexer_NextChar(lexer);
+                    }
+                    goto Start;
+                } else if (lexer->Current == '*') {
+                    Lexer_ExpectChar(lexer, '*');
+                    uint64_t depth = 1;
+                    while (depth > 0 && lexer->Current != '\0') {
+                        if (lexer->Current == '/') {
+                            Lexer_ExpectChar(lexer, '/');
+                            if (lexer->Current == '*') {
+                                Lexer_ExpectChar(lexer, '*');
+                                depth++;
+                            }
+                        } else if (lexer->Current == '*') {
+                            Lexer_ExpectChar(lexer, '*');
+                            if (lexer->Current == '/') {
+                                Lexer_ExpectChar(lexer, '/');
+                                depth--;
+                            }
+                        } else {
+                            Lexer_NextChar(lexer);
+                        }
+                    }
+                    goto Start;
+                }
+                return TOKEN(TokenKind_Slash);
+            } break;
 
             case '-': {
                 Lexer_ExpectChar(lexer, '-');
