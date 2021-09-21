@@ -1,3 +1,6 @@
+// I have not added type inference yet
+// all types are explicit
+
 factorial: (n: int) -> int = (n: int) -> int {
     if n == 1 {
         return 1;
