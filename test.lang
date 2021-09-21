@@ -11,7 +11,7 @@ factorial: (n: int) -> int = (n: int) -> int {
 
 a: int = 6;
 b: int = factorial(a);
-print c;
+print b;
 c: int = b;
 c = c - a;
 print c;
