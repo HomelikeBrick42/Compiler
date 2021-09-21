@@ -214,7 +214,7 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
                 Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
                 Parser_ExpectToken(parser, TokenKind_RightArrow);
-                procedure->Procedure.ReturnValue = Parser_ParseExpression(parser);
+                procedure->Procedure.ReturnType = Parser_ParseExpression(parser);
 
                 if (parser->Current.Kind == TokenKind_OpenBrace) {
                     procedure->Procedure.Body = Parser_ParseScope(parser);
@@ -292,6 +292,7 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
         if (parser->Current.Kind == TokenKind_OpenParenthesis) {
             AstCall* call = calloc(1, sizeof(AstCall));
             call->Kind    = AstKind_Call;
+            call->Call.Operand = left;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
 

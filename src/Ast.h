@@ -55,11 +55,12 @@
     AST_KIND(Procedure, {                       \
         AstDeclaration** Parameters;            \
         uint64_t ParameterCount;                \
-        AstExpression* ReturnValue;             \
+        AstExpression* ReturnType;              \
         AstScope* Body;                         \
     })                                          \
                                                 \
     AST_KIND(Call, {                            \
+        AstExpression* Operand;                 \
         AstExpression** Arguments;              \
         uint64_t ArgumentCount;                 \
     })                                          \
@@ -118,3 +119,5 @@ struct Ast {
 #undef AST_KIND_BEGIN
     };
 };
+
+void PrintAst(Ast* ast, uint64_t indent);

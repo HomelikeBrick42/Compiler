@@ -177,9 +177,11 @@ bool Parser_Test() {
     }
 
     AstScope* scope = Parser_ParseFile(&parser);
-    (void)scope;
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
+    if (success) {
+        PrintAst(scope, 0);
+    }
 
     Parser_Destroy(&parser);
 
