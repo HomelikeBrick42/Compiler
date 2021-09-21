@@ -201,9 +201,6 @@ bool VM_Step(VM* vm) {
         } break;
 
         case Op_Call: {
-            uint64_t location = *(uint64_t*)vm->Ip;
-            vm->Ip += sizeof(uint64_t);
-
             uint64_t argSize = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);
 
@@ -214,6 +211,9 @@ bool VM_Step(VM* vm) {
             for (uint64_t i = 0; i < argSize; i++) {
                 argBuffer[i] = vm->Sp[i];
             }
+
+            vm->Sp -= sizeof(uint64_t);
+            uint64_t location = *(uint64_t*)vm->Sp;
 
             *(uint64_t*)vm->Sp = vm->Ip - vm->Code;
             vm->Sp += sizeof(uint64_t);

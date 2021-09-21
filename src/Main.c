@@ -45,14 +45,18 @@ bool VM_Test() {
 
         // Main code
         *code++          = Op_Push;
+        *(uint64_t*)code = sizeof(uint64_t); // Size
+        code += sizeof(uint64_t);
+        uint64_t* callLocation = (uint64_t*)code; // Location
+        code += sizeof(uint64_t);
+
+        *code++          = Op_Push;
         *(uint64_t*)code = sizeof(int64_t); // Size
         code += sizeof(uint64_t);
         *(int64_t*)code = 6; // Value
         code += sizeof(int64_t);
 
         *code++                = Op_Call;
-        uint64_t* callLocation = (uint64_t*)code; // Location
-        code += sizeof(uint64_t);
         *(uint64_t*)code = sizeof(int64_t); // Arg size
         code += sizeof(uint64_t);
 
@@ -65,6 +69,12 @@ bool VM_Test() {
         *callLocation             = functionLocation;
 
         // Function
+        *code++          = Op_Push;
+        *(uint64_t*)code = sizeof(uint64_t); // Size
+        code += sizeof(uint64_t);
+        *(uint64_t*)code = functionLocation; // Call location
+        code += sizeof(uint64_t);
+
         *code++          = Op_Load;
         *(uint64_t*)code = 0; // Offset
         code += sizeof(uint64_t);
@@ -90,8 +100,6 @@ bool VM_Test() {
         code += sizeof(uint64_t);
 
         *code++          = Op_Call;
-        *(uint64_t*)code = functionLocation; // Location
-        code += sizeof(uint64_t);
         *(uint64_t*)code = sizeof(int64_t); // Arg size
         code += sizeof(uint64_t);
 
