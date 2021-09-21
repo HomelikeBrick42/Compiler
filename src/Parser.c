@@ -80,7 +80,7 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
 
         case TokenKind_KeywordIf: {
             AstIf* iff = calloc(1, sizeof(AstIf));
-            iff->Kind = AstKind_If;
+            iff->Kind  = AstKind_If;
             Parser_ExpectToken(parser, TokenKind_KeywordIf);
             iff->If.Condition = Parser_ParseExpression(parser);
             iff->If.ThenScope = Parser_ParseScope(parser);
@@ -93,7 +93,7 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
 
         case TokenKind_KeywordPrint: {
             AstPrint* print = calloc(1, sizeof(AstPrint));
-            print->Kind = AstKind_Print;
+            print->Kind     = AstKind_Print;
             Parser_ExpectToken(parser, TokenKind_KeywordPrint);
             print->Print.Value = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_Semicolon);
@@ -102,7 +102,7 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
 
         case TokenKind_KeywordReturn: {
             AstReturn* ret = calloc(1, sizeof(AstReturn));
-            ret->Kind = AstKind_Return;
+            ret->Kind      = AstKind_Return;
             Parser_ExpectToken(parser, TokenKind_KeywordReturn);
             ret->Return.Value = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_Semicolon);
@@ -206,7 +206,8 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
                     Parser_ExpectToken(parser, TokenKind_Comma);
                     procedure->Procedure.Parameters = realloc(
                         procedure->Procedure.Parameters, (procedure->Procedure.ParameterCount + 1) * sizeof(AstDeclaration*));
-                    procedure->Procedure.Parameters[procedure->Procedure.ParameterCount] = firstDeclaration;
+                    Token name = Parser_ExpectToken(parser, TokenKind_Identifier);
+                    procedure->Procedure.Parameters[procedure->Procedure.ParameterCount] = Parser_ParseDeclaration(parser, name);
                     procedure->Procedure.ParameterCount++;
                 }
 
@@ -290,7 +291,7 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
     while (true) {
         if (parser->Current.Kind == TokenKind_OpenParenthesis) {
             AstCall* call = calloc(1, sizeof(AstCall));
-            call->Kind = AstKind_Call;
+            call->Kind    = AstKind_Call;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
 
