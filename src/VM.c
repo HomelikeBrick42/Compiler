@@ -20,8 +20,8 @@ bool VM_Create(VM* vm, uint8_t* code, uint64_t codeSize, uint64_t stackSize) {
     }
 
     vm->StackSize = stackSize;
-    vm->Sp = vm->Stack;
-    vm->Bp = vm->Stack;
+    vm->Sp        = vm->Stack;
+    vm->Bp        = vm->Stack;
 
     return true;
 }

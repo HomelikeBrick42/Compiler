@@ -19,6 +19,9 @@ void Parser_Destroy(Parser* parser);
 Token Parser_NextToken(Parser* parser);
 Token Parser_ExpectToken(Parser* parser, TokenKind expected);
 
+AstStatement* Parser_ParseStatement(Parser* parser);
+AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name);
+
 AstExpression* Parser_ParseExpression(Parser* parser);
 AstExpression* Parser_ParsePrimaryExpression(Parser* parser);
 uint64_t Parser_GetUnaryOperatorPrecedence(TokenKind kind);

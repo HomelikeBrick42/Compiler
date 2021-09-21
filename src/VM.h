@@ -26,7 +26,7 @@ typedef enum Op {
     Op_JumpNonZero,
     Op_Call,
     Op_Return,
-    Op_Load, // TODO: For arrays make a version which takes the offset (or maybe a offset for the offset) from the stack
+    Op_Load,  // TODO: For arrays make a version which takes the offset (or maybe a offset for the offset) from the stack
     Op_Store, // TODO: Same as ^
 } Op;
 

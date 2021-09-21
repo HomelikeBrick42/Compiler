@@ -1,4 +1,4 @@
-1 + 2 * 3
+a: int = 1 + 2 * 3;
 
 /*
 factorial: (n: int) -> int = (n: int) -> int {

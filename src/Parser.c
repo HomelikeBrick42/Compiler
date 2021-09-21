@@ -35,7 +35,7 @@ void Parser_Destroy(Parser* parser) {
 
 Token Parser_NextToken(Parser* parser) {
     parser->Previous = parser->Current;
-    parser->Current = Lexer_NextToken(&parser->Lexer);
+    parser->Current  = Lexer_NextToken(&parser->Lexer);
     return parser->Previous;
 }
 
@@ -48,14 +48,45 @@ Token Parser_ExpectToken(Parser* parser, TokenKind expected) {
                 token.FilePath,
                 token.Line,
                 token.Column,
-                TokenKind_Names[token.Kind],
-                TokenKind_Names[expected]);
-        token.Kind = expected;
+                TokenKind_Names[expected],
+                TokenKind_Names[token.Kind]);
+        token.Kind       = expected;
         parser->WasError = true;
         return token;
     } else {
         return Parser_NextToken(parser);
     }
+}
+
+AstStatement* Parser_ParseStatement(Parser* parser) {
+    AstExpression* expression = Parser_ParseExpression(parser);
+    if (expression->Kind == AstKind_Name && parser->Current.Kind == TokenKind_Colon) {
+        Token name = expression->Name.Token;
+        free(expression);
+        AstDeclaration* declaration = Parser_ParseDeclaration(parser, name);
+        Parser_ExpectToken(parser, TokenKind_Semicolon);
+        return declaration;
+    } else {
+        Parser_ExpectToken(parser, TokenKind_Semicolon);
+        return expression;
+    }
+}
+
+AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name) {
+    AstDeclaration* declaration = calloc(1, sizeof(AstDeclaration));
+    declaration->Kind           = AstKind_Declaration;
+
+    declaration->Declaration.Name = name;
+
+    Parser_ExpectToken(parser, TokenKind_Colon);
+    declaration->Declaration.Type = Parser_ParseExpression(parser);
+
+    if (parser->Current.Kind == TokenKind_Equals) {
+        declaration->Declaration.EqualsToken = Parser_ExpectToken(parser, TokenKind_Equals);
+        declaration->Declaration.Value       = Parser_ParseExpression(parser);
+    }
+
+    return declaration;
 }
 
 AstExpression* Parser_ParseExpression(Parser* parser) {
@@ -65,10 +96,17 @@ AstExpression* Parser_ParseExpression(Parser* parser) {
 AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
     switch (parser->Current.Kind) {
         case TokenKind_Integer: {
-            AstInteger* integer = calloc(1, sizeof(AstInteger));
-            integer->Kind = AstKind_Integer;
+            AstInteger* integer    = calloc(1, sizeof(AstInteger));
+            integer->Kind          = AstKind_Integer;
             integer->Integer.Token = Parser_ExpectToken(parser, TokenKind_Integer);
             return integer;
+        } break;
+
+        case TokenKind_Identifier: {
+            AstName* name    = calloc(1, sizeof(AstName));
+            name->Kind       = AstKind_Name;
+            name->Name.Token = Parser_ExpectToken(parser, TokenKind_Identifier);
+            return name;
         } break;
 
         default: {

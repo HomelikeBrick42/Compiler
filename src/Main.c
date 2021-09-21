@@ -168,8 +168,8 @@ bool Parser_Test() {
         return false;
     }
 
-    AstExpression* expression = Parser_ParseExpression(&parser);
-    (void)expression;
+    AstStatement* statement = Parser_ParseStatement(&parser);
+    (void)statement;
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
 
