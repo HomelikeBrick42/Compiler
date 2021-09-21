@@ -9,7 +9,7 @@ factorial: (n: int) -> int : (n: int) -> int {
 };
 
 // This '()' being the type of an empty procedure is a bit weird?
-main : () : () { // The return value is also optional
+main: () : () { // The return value is also optional
     a: int = 6;
     b: int = factorial(a);
     print b;
