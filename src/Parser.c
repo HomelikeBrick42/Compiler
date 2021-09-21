@@ -151,17 +151,25 @@ AstScope* Parser_ParseScope(Parser* parser) {
 }
 
 AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name) {
-    AstDeclaration* declaration = calloc(1, sizeof(AstDeclaration));
-    declaration->Kind           = AstKind_Declaration;
+    AstDeclaration* declaration       = calloc(1, sizeof(AstDeclaration));
+    declaration->Kind                 = AstKind_Declaration;
+    declaration->Declaration.Constant = false;
 
     declaration->Declaration.Name = name;
 
     Parser_ExpectToken(parser, TokenKind_Colon);
-    declaration->Declaration.Type = Parser_ParseExpression(parser);
+
+    if (parser->Current.Kind != TokenKind_Equals && parser->Current.Kind != TokenKind_Colon) {
+        declaration->Declaration.Type = Parser_ParseExpression(parser);
+    }
 
     if (parser->Current.Kind == TokenKind_Equals) {
         declaration->Declaration.EqualsToken = Parser_ExpectToken(parser, TokenKind_Equals);
         declaration->Declaration.Value       = Parser_ParseExpression(parser);
+    } else if (parser->Current.Kind == TokenKind_Colon) {
+        declaration->Declaration.EqualsToken = Parser_ExpectToken(parser, TokenKind_Colon);
+        declaration->Declaration.Value       = Parser_ParseExpression(parser);
+        declaration->Declaration.Constant    = true;
     }
 
     return declaration;
@@ -189,7 +197,27 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
 
         case TokenKind_OpenParenthesis: {
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
+
+            if (parser->Current.Kind == TokenKind_CloseParenthesis) {
+                AstProcedure* procedure = calloc(1, sizeof(AstProcedure));
+                procedure->Kind         = AstKind_Procedure;
+
+                Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
+
+                if (parser->Current.Kind == TokenKind_RightArrow) {
+                    Parser_ExpectToken(parser, TokenKind_RightArrow);
+                    procedure->Procedure.ReturnType = Parser_ParseExpression(parser);
+                }
+
+                if (parser->Current.Kind == TokenKind_OpenBrace) {
+                    procedure->Procedure.Body = Parser_ParseScope(parser);
+                }
+
+                return procedure;
+            }
+
             AstExpression* expression = Parser_ParseExpression(parser);
+
             if (expression && expression->Kind == AstKind_Name && parser->Current.Kind == TokenKind_Colon) {
                 AstProcedure* procedure = calloc(1, sizeof(AstProcedure));
                 procedure->Kind         = AstKind_Procedure;
@@ -213,8 +241,10 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
 
                 Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
-                Parser_ExpectToken(parser, TokenKind_RightArrow);
-                procedure->Procedure.ReturnType = Parser_ParseExpression(parser);
+                if (parser->Current.Kind == TokenKind_RightArrow) {
+                    Parser_ExpectToken(parser, TokenKind_RightArrow);
+                    procedure->Procedure.ReturnType = Parser_ParseExpression(parser);
+                }
 
                 if (parser->Current.Kind == TokenKind_OpenBrace) {
                     procedure->Procedure.Body = Parser_ParseScope(parser);
@@ -290,8 +320,8 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
 
     while (true) {
         if (parser->Current.Kind == TokenKind_OpenParenthesis) {
-            AstCall* call = calloc(1, sizeof(AstCall));
-            call->Kind    = AstKind_Call;
+            AstCall* call      = calloc(1, sizeof(AstCall));
+            call->Kind         = AstKind_Call;
             call->Call.Operand = left;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);

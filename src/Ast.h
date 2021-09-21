@@ -3,6 +3,7 @@
 #include "Token.h"
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define AST_KINDS                               \
     AST_KIND_BEGIN(Statement)                   \
@@ -17,6 +18,7 @@
         AstExpression* Type;                    \
         Token EqualsToken;                      \
         AstExpression* Value;                   \
+        bool Constant;                          \
     })                                          \
                                                 \
     AST_KIND(Assignment, {                      \

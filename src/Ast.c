@@ -35,12 +35,19 @@ void PrintAst(Ast* ast, uint64_t indent) {
 
         case AstKind_Declaration: {
             putchar('\n');
+            Indent(indent + 1);
+            printf("Constant: %s\n", ast->Declaration.Constant ? "true" : "false");
             Token nameToken = ast->Declaration.Name;
             Indent(indent + 1);
-            printf("Name: '%.*s'\n", (uint32_t)nameToken.Length, &nameToken.Source[nameToken.Position]);
-            Indent(indent + 1);
-            printf("Type: ");
-            PrintAst(ast->Declaration.Type, indent + 1);
+            printf("Name: '%.*s'", (uint32_t)nameToken.Length, &nameToken.Source[nameToken.Position]);
+
+            if (ast->Declaration.Type) {
+                putchar('\n');
+                Indent(indent + 1);
+                printf("Type: ");
+                PrintAst(ast->Declaration.Type, indent + 1);
+            }
+
             if (ast->Declaration.Value) {
                 putchar('\n');
                 Indent(indent + 1);
@@ -125,16 +132,24 @@ void PrintAst(Ast* ast, uint64_t indent) {
 
         case AstKind_Procedure: {
             putchar('\n');
+
             Indent(indent + 1);
             printf("Parameters:\n");
             for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
                 Indent(indent + 2);
                 PrintAst(ast->Procedure.Parameters[i], indent + 2);
-                putchar('\n');
+                if (i < ast->Procedure.ParameterCount - 1) {
+                    putchar('\n');
+                }
             }
-            Indent(indent + 1);
-            printf("Return Type: ");
-            PrintAst(ast->Procedure.ReturnType, indent + 1);
+
+            if (ast->Procedure.ReturnType) {
+                putchar('\n');
+                Indent(indent + 1);
+                printf("Return Type: ");
+                PrintAst(ast->Procedure.ReturnType, indent + 1);
+            }
+
             if (ast->Procedure.Body) {
                 putchar('\n');
                 Indent(indent + 1);
