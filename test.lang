@@ -1,0 +1,14 @@
+factorial: (n: int) -> int = (n: int) -> int {
+    if n == 1 {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+};
+
+a: int = 6;
+b: int = factorial(a);
+print c;
+c: int = b;
+c = c - a;
+print c;

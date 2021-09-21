@@ -1,15 +1,35 @@
 #include "VM.h"
+#include "Lexer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
+bool VM_Test();
+bool Lexer_Test();
+
 int main(int argc, char** argv) {
+#if 0
+    if (!VM_Test()) {
+        return EXIT_FAILURE;
+    }
+#endif
+
+#if 1
+    if (!Lexer_Test()) {
+        return EXIT_FAILURE;
+    }
+#endif
+
+    return EXIT_SUCCESS;
+}
+
+bool VM_Test() {
     uint64_t codeSize  = 1024;
     uint8_t* codeBlock = calloc(codeSize, sizeof(uint8_t));
     if (!codeBlock) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     {
@@ -94,7 +114,8 @@ int main(int argc, char** argv) {
 
     VM vm;
     if (!VM_Create(&vm, codeBlock, codeSize, 1024 * 1024)) {
-        return EXIT_FAILURE;
+        free(codeBlock);
+        return false;
     }
 
     while (true) {
@@ -107,5 +128,28 @@ int main(int argc, char** argv) {
 
     free(codeBlock);
 
-    return EXIT_SUCCESS;
+    return true;
+}
+
+bool Lexer_Test() {
+    Lexer lexer;
+    if (!Lexer_Create(&lexer, "./test.lang")) {
+        return false;
+    }
+
+    while (true) {
+        Token token = Lexer_NextToken(&lexer);
+
+        printf("%s\n", TokenKind_Names[token.Kind]);
+
+        if (token.Kind == TokenKind_EndOfFile) {
+            break;
+        }
+    }
+
+    bool success = !lexer.WasError;
+
+    Lexer_Destroy(&lexer);
+
+    return success;
 }
