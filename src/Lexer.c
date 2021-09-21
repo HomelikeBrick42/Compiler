@@ -73,6 +73,7 @@ Token Lexer_NextToken(Lexer* lexer) {
 #define TOKEN(kind)                                  \
     (Token){                                         \
         .Kind     = (kind),                          \
+        .FilePath = lexer->FilePath,                 \
         .Source   = lexer->Source,                   \
         .Position = startPosition,                   \
         .Line     = startLine,                       \

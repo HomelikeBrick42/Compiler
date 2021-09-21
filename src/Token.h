@@ -50,6 +50,7 @@ extern const char* TokenKind_Names[TokenKind_Count];
 
 typedef struct Token {
     TokenKind Kind;
+    const char* FilePath;
     const char* Source;
     uint64_t Position;
     uint64_t Line;

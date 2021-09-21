@@ -20,10 +20,12 @@ include_directories(src)
 
 add_executable(
         Compiler
+        src/Ast.c
+        src/Ast.h
         src/Lexer.c
         src/Lexer.h
         src/Main.c
         src/Token.c
         src/Token.h
         src/VM.c
-        src/VM.h)
+        src/VM.h src/Ast.c)
