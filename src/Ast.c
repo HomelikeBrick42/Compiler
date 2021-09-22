@@ -169,5 +169,8 @@ void PrintAst(Ast* ast, uint64_t indent) {
                 }
             }
         } break;
+
+        case AstKind_TypeExpression:
+            break;
     }
 }

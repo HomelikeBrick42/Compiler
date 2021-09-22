@@ -5,8 +5,16 @@
 
 #define TYPE_KINDS                       \
     TYPE_KIND(Type, {})                  \
+                                         \
     TYPE_KIND(Integer, { bool Signed; }) \
-    TYPE_KIND(Float, {})
+    TYPE_KIND(Float, {})                 \
+    TYPE_KIND(Bool, {})                  \
+                                         \
+    TYPE_KIND(Procedure, {               \
+        Type** ParameterTypes;           \
+        uint64_t ParameterTypeCount;     \
+        Type* ReturnType;                \
+    })
 
 typedef enum TypeKind {
 #define TYPE_KIND(name, data) TypeKind_##name,
@@ -32,6 +40,7 @@ TYPE_KINDS
 
 struct Type {
     TypeKind Kind;
+    uint64_t Size;
     union {
 #define TYPE_KIND(name, data) Type##name##Data name;
         TYPE_KINDS

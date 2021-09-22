@@ -6,4 +6,5 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-bool ResolveAst(Ast* ast);
+void InitTypes();
+bool ResolveAst(Ast* ast, AstScope* parentScope);

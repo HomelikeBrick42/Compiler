@@ -10,6 +10,9 @@
     AST_KIND_BEGIN(Statement)                   \
                                                 \
     AST_KIND(Scope, {                           \
+        AstScope* ParentScope;                  \
+        AstDeclaration** Declarations;          \
+        uint64_t DeclarationCount;              \
         AstStatement** Statements;              \
         uint64_t StatementCount;                \
     })                                          \
@@ -21,6 +24,7 @@
         Token EqualsToken;                      \
         AstExpression* Value;                   \
         bool Constant;                          \
+        bool IsProcedureParam;                  \
     })                                          \
                                                 \
     AST_KIND(Assignment, {                      \
@@ -55,6 +59,8 @@
     AST_KIND(Integer, { Token Token; })         \
     /* AST_KIND(Float, { Token Token; }) */     \
                                                 \
+    AST_KIND(TypeExpression, { Type* Type; })   \
+                                                \
     AST_KIND(Name, {                            \
         Token Token;                            \
         AstDeclaration* ResolvedDeclaration;    \
@@ -87,7 +93,6 @@ typedef enum AstKind {
 #undef AST_KIND_END
 #undef AST_KIND_BEGIN
 } AstKind;
-
 
 #define AST_KIND_BEGIN(name)
 #define AST_KIND_END(name)

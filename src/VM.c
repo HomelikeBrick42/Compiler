@@ -74,12 +74,6 @@ bool VM_Step(VM* vm) {
             vm->Sp -= size;
         } break;
 
-        case Op_AllocStack: {
-            uint64_t size = *(uint64_t*)vm->Ip;
-            vm->Ip += sizeof(uint64_t);
-            vm->Sp += size;
-        } break;
-
         case Op_Dup: {
             uint64_t size = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);

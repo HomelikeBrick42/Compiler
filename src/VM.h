@@ -8,7 +8,6 @@ typedef enum Op {
     Op_Exit,
     Op_Push,
     Op_Pop,
-    Op_AllocStack,
     Op_Dup,
     Op_AddI64,
     Op_AddU64,

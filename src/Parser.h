@@ -11,6 +11,8 @@ typedef struct Parser {
     Token Current;
     Token Previous;
     bool WasError;
+    AstScope* ParentFileScope;
+    AstScope* ParentScope;
 } Parser;
 
 bool Parser_Create(Parser* parser, const char* filePath);
@@ -23,7 +25,7 @@ AstScope* Parser_ParseFile(Parser* parser);
 
 AstStatement* Parser_ParseStatement(Parser* parser);
 AstScope* Parser_ParseScope(Parser* parser);
-AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name);
+AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name, bool isProcedureParam);
 
 AstExpression* Parser_ParseExpression(Parser* parser);
 AstExpression* Parser_ParsePrimaryExpression(Parser* parser);
