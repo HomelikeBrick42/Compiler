@@ -12,7 +12,10 @@ This language does not have a name yet
 ### Features
 - [ ] Pointers
 - [ ] Loading arbitrary c functions
-- [ ] Compile time evaluation of functions for constants
+- [ ] Compile time evaluation of constants
+### Far in the future
+- [ ] Self-hosting compiler
+- [ ] Compiling to x86_64
 
 ## Variables
 

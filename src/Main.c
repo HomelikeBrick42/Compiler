@@ -1,6 +1,7 @@
 #include "VM.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "Resolver.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +11,7 @@
 bool VM_Test();
 bool Lexer_Test();
 bool Parser_Test();
+bool Resolver_Test();
 
 int main(int argc, char** argv) {
 #if 0
@@ -24,8 +26,14 @@ int main(int argc, char** argv) {
     }
 #endif
 
-#if 1
+#if 0
     if (!Parser_Test()) {
+        return EXIT_FAILURE;
+    }
+#endif
+
+#if 1
+    if (!Resolver_Test()) {
         return EXIT_FAILURE;
     }
 #endif
@@ -176,11 +184,29 @@ bool Parser_Test() {
         return false;
     }
 
-    AstScope* scope = Parser_ParseFile(&parser);
+    AstScope* file = Parser_ParseFile(&parser);
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
     if (success) {
-        PrintAst(scope, 0);
+        PrintAst(file, 0);
+    }
+
+    Parser_Destroy(&parser);
+
+    return success;
+}
+
+bool Resolver_Test() {
+    Parser parser;
+    if (!Parser_Create(&parser, "./test.lang")) {
+        return false;
+    }
+
+    AstScope* file = Parser_ParseFile(&parser);
+
+    bool success = !parser.WasError && !parser.Lexer.WasError;
+    if (success) {
+        success = ResolveAst(file);
     }
 
     Parser_Destroy(&parser);

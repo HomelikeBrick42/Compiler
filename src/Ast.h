@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Token.h"
+#include "Type.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -16,6 +17,7 @@
     AST_KIND(Declaration, {                     \
         Token Name;                             \
         AstExpression* Type;                    \
+        Type* ResolvedType;                     \
         Token EqualsToken;                      \
         AstExpression* Value;                   \
         bool Constant;                          \
@@ -50,14 +52,19 @@
         AstExpression* Right;                   \
     })                                          \
                                                 \
-    AST_KIND(Name, { Token Token; })            \
     AST_KIND(Integer, { Token Token; })         \
     /* AST_KIND(Float, { Token Token; }) */     \
+                                                \
+    AST_KIND(Name, {                            \
+        Token Token;                            \
+        AstDeclaration* ResolvedDeclaration;    \
+    })                                          \
                                                 \
     AST_KIND(Procedure, {                       \
         AstDeclaration** Parameters;            \
         uint64_t ParameterCount;                \
         AstExpression* ReturnType;              \
+        Type* ResolvedReturnType;               \
         AstScope* Body;                         \
     })                                          \
                                                 \
@@ -79,15 +86,16 @@ typedef enum AstKind {
 #undef AST_KIND
 #undef AST_KIND_END
 #undef AST_KIND_BEGIN
+} AstKind;
+
 
 #define AST_KIND_BEGIN(name)
 #define AST_KIND_END(name)
 #define AST_KIND(name, data) +1
-        AstKind_Count = 0 AST_KINDS
+enum { AstKind_Count = 0 AST_KINDS };
 #undef AST_KIND
 #undef AST_KIND_END
 #undef AST_KIND_BEGIN
-} AstKind;
 
 extern const char* AstKind_Names[AstKind_Count];
 
@@ -109,8 +117,17 @@ AST_KINDS
 #undef AST_KIND_END
 #undef AST_KIND_BEGIN
 
+typedef enum Resolution {
+    Resolution_Unresolved,
+    Resolution_Resolving,
+    Resolution_Resolved,
+} Resolution;
+
 struct Ast {
     AstKind Kind;
+    Resolution Resolution;
+    Type* ResolvedType;
+
     union {
 #define AST_KIND_BEGIN(name)
 #define AST_KIND_END(name)

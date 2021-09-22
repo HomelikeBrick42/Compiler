@@ -158,9 +158,16 @@ void PrintAst(Ast* ast, uint64_t indent) {
         } break;
 
         case AstKind_Call: {
+            if (ast->Call.ArgumentCount > 0) {
+                putchar('\n');
+                Indent(indent + 1);
+                printf("Arguments:");
+                for (uint64_t i = 0; i < ast->Call.ArgumentCount; i++) {
+                    putchar('\n');
+                    Indent(indent + 2);
+                    PrintAst(ast->Call.Arguments[i], indent + 2);
+                }
+            }
         } break;
-
-        default:
-            break;
     }
 }

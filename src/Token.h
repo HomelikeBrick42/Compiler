@@ -42,10 +42,11 @@ typedef enum TokenKind {
 #define TOKEN_KIND(name, str) TokenKind_##name,
     TOKEN_KINDS
 #undef TOKEN_KIND
-#define TOKEN_KIND(name, str) +1
-        TokenKind_Count = 0 TOKEN_KINDS
-#undef TOKEN_KIND
 } TokenKind;
+
+#define TOKEN_KIND(name, str) +1
+enum { TokenKind_Count = 0 TOKEN_KINDS };
+#undef TOKEN_KIND
 
 extern const char* TokenKind_Names[TokenKind_Count];
 
