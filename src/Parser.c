@@ -159,9 +159,10 @@ AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name) {
 
     Parser_ExpectToken(parser, TokenKind_Colon);
 
-    if (parser->Current.Kind != TokenKind_Equals && parser->Current.Kind != TokenKind_Colon) {
-        declaration->Declaration.Type = Parser_ParseExpression(parser);
-    }
+    // Always need a type for now
+    // if (parser->Current.Kind != TokenKind_Equals && parser->Current.Kind != TokenKind_Colon) {
+    declaration->Declaration.Type = Parser_ParseExpression(parser);
+    // }
 
     if (parser->Current.Kind == TokenKind_Equals) {
         declaration->Declaration.EqualsToken = Parser_ExpectToken(parser, TokenKind_Equals);
