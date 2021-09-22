@@ -1,11 +1,3 @@
-factorial :: (n: int) -> int {
-    if n == 1 {
-        return 1;
-    } else {
-        return n * factorial(n - 1);
-    }
-};
-
 main :: () {
     a := 6;
     b := factorial(a);
@@ -13,4 +5,12 @@ main :: () {
     c := b;
     c = c - a;
     print c;
+};
+
+factorial :: (n: int) -> int {
+    if n == 1 {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
 };
