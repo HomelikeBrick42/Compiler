@@ -5,6 +5,12 @@ main :: () {
     c := b;
     c = c - a;
     print c;
+
+    print_square :: (number: int) {
+        print number * number;
+    };
+
+    print_square(5);
 };
 
 factorial :: (n: int) -> int {
