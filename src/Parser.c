@@ -180,10 +180,9 @@ AstDeclaration* Parser_ParseDeclaration(Parser* parser, Token name, bool isProce
 
     Parser_ExpectToken(parser, TokenKind_Colon);
 
-    // Always need a type for now
-    // if (parser->Current.Kind != TokenKind_Equals && parser->Current.Kind != TokenKind_Colon) {
-    declaration->Declaration.Type = Parser_ParseExpression(parser);
-    // }
+    if (parser->Current.Kind != TokenKind_Equals && parser->Current.Kind != TokenKind_Colon) {
+        declaration->Declaration.Type = Parser_ParseExpression(parser);
+    }
 
     if (parser->Current.Kind == TokenKind_Equals) {
         declaration->Declaration.EqualsToken = Parser_ExpectToken(parser, TokenKind_Equals);

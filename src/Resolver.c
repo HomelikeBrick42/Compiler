@@ -236,6 +236,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
             fflush(stdout);
             // TODO: Better error message
             fprintf(stderr, "Recursive dependency found\n");
+            exit(EXIT_FAILURE);
             return false;
         } break;
 
@@ -438,6 +439,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                         if (memcmp(&nameToken.Source[nameToken.Position],
                                    &declaration->Declaration.Name.Source[declaration->Declaration.Name.Position],
                                    nameToken.Length) == 0) {
+                            ResolveAst(declaration, scope);
                             ast->Name.ResolvedDeclaration = declaration;
                             goto Exit;
                         }

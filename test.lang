@@ -1,6 +1,6 @@
 // All types are explicit because there is no type inference yet
 
-factorial: (n: int) -> int : (n: int) -> int {
+factorial :: (n: int) -> int {
     if n == 1 {
         return 1;
     } else {
@@ -8,12 +8,11 @@ factorial: (n: int) -> int : (n: int) -> int {
     }
 };
 
-// This '()' being the type of an empty procedure is a bit weird?
-main: () : () { // The return value is also optional
-    a: int = 6;
-    b: int = factorial(a);
+main :: () { // The return value is also optional
+    a := 6;
+    b := factorial(a);
     print b;
-    c: int = b;
+    c := b;
     c = c - a;
     print c;
 };
