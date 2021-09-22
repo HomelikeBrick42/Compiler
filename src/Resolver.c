@@ -226,6 +226,9 @@ static bool AssertTypesEqual(Type* a, Type* b) {
     return true;
 }
 
+static AstScope** PendingProcedureBodyScopes    = NULL;
+static uint64_t PendingProcedureBodyScopeCount = 0;
+
 bool ResolveAst(Ast* ast, AstScope* parentScope) {
     switch (ast->Resolution) {
         case Resolution_Resolved: {
@@ -249,6 +252,13 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         case AstKind_Scope: {
             for (uint64_t i = 0; i < ast->Scope.StatementCount; i++) {
                 if (!ResolveAst(ast->Scope.Statements[i], ast)) {
+                    return false;
+                }
+            }
+
+            for (int64_t i = (int64_t)PendingProcedureBodyScopeCount - 1; i >= 0; i--) {
+                PendingProcedureBodyScopeCount--;
+                if (!ResolveAst(PendingProcedureBodyScopes[i], ast)) {
                     return false;
                 }
             }
@@ -439,9 +449,15 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                         if (memcmp(&nameToken.Source[nameToken.Position],
                                    &declaration->Declaration.Name.Source[declaration->Declaration.Name.Position],
                                    nameToken.Length) == 0) {
-                            ResolveAst(declaration, scope);
-                            ast->Name.ResolvedDeclaration = declaration;
-                            goto Exit;
+                            if (!ast->Name.ResolvedDeclaration) {
+                                ResolveAst(declaration, scope);
+                                ast->Name.ResolvedDeclaration = declaration;
+                            } else {
+                                fflush(stdout);
+                                fprintf(stderr,
+                                        "Ambiguous name because there are multiple constant declarations in the same scope\n");
+                                return false;
+                            }
                         }
                     }
                 }
@@ -500,9 +516,9 @@ Exit:
             }
 
             if (ast->Procedure.Body) {
-                if (!ResolveAst(ast->Procedure.Body, parentScope)) {
-                    return false;
-                }
+                PendingProcedureBodyScopes = realloc(PendingProcedureBodyScopes, (PendingProcedureBodyScopeCount + 1) * sizeof(AstScope*));
+                PendingProcedureBodyScopes[PendingProcedureBodyScopeCount] = ast->Procedure.Body;
+                PendingProcedureBodyScopeCount++;
 
                 TypeProcedure* type = calloc(1, sizeof(TypeProcedure));
                 type->Kind          = TypeKind_Procedure;
