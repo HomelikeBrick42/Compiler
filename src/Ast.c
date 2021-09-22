@@ -131,15 +131,14 @@ void PrintAst(Ast* ast, uint64_t indent) {
         } break;
 
         case AstKind_Procedure: {
-            putchar('\n');
-
-            Indent(indent + 1);
-            printf("Parameters:\n");
-            for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
-                Indent(indent + 2);
-                PrintAst(ast->Procedure.Parameters[i], indent + 2);
-                if (i < ast->Procedure.ParameterCount - 1) {
+            if (ast->Procedure.ParameterCount > 0) {
+                putchar('\n');
+                Indent(indent + 1);
+                printf("Parameters:");
+                for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
                     putchar('\n');
+                    Indent(indent + 2);
+                    PrintAst(ast->Procedure.Parameters[i], indent + 2);
                 }
             }
 
