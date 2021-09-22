@@ -16,7 +16,7 @@ bool Resolver_Test();
 int main(int argc, char** argv) {
     InitTypes();
 
-#if 0
+#if 1
     if (!VM_Test()) {
         return EXIT_FAILURE;
     }
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     }
 #endif
 
-#if 1
+#if 0
     if (!Resolver_Test()) {
         return EXIT_FAILURE;
     }
@@ -136,7 +136,13 @@ bool VM_Test() {
         *code++          = Op_Return;
         *(uint64_t*)code = sizeof(int64_t); // Size
         code += sizeof(uint64_t);
+
+        codeSize = code - codeBlock;
     }
+
+    PrintBytecode(codeBlock, codeSize);
+
+    putchar('\n');
 
     VM vm;
     if (!VM_Create(&vm, codeBlock, codeSize, 1024 * 1024)) {

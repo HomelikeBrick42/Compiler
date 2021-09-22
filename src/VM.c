@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+const char* Op_Names[Op_Count] = {
+#define OP(name) [Op_##name] = #name,
+    OPS
+#undef OP
+};
+
 bool VM_Create(VM* vm, uint8_t* code, uint64_t codeSize, uint64_t stackSize) {
     if (!vm) {
         return false;
@@ -280,4 +286,88 @@ bool VM_Step(VM* vm) {
     }
 
     return true;
+}
+
+void PrintBytecode(uint8_t* code, uint64_t codeSize) {
+    uint8_t* ip = code;
+    while ((uint64_t)(ip - code) < codeSize) {
+        Op inst = *ip;
+        printf("%llu %s", ip - code, inst < Op_Count ? Op_Names[inst] : "Invalid");
+        ip++;
+        switch (inst) {
+            case Op_Push: {
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                ip += size;
+                printf(": Size = %llu", size);
+            } break;
+
+            case Op_Pop: {
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": Size = %llu", size);
+            } break;
+
+            case Op_Dup: {
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": Size = %llu", size);
+            } break;
+
+            case Op_Equal: {
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": Size = %llu", size);
+            } break;
+
+            case Op_Jump: {
+                uint64_t location = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": Location = %llu", location);
+            } break;
+
+            case Op_JumpZero: {
+                uint64_t location = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": Location = %llu, Size = %llu", location, size);
+            } break;
+
+            case Op_JumpNonZero: {
+                uint64_t location = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": Location = %llu, Size = %llu", location, size);
+            } break;
+
+            case Op_Call: {
+                uint64_t argSize = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": ArgSize = %llu", argSize);
+            } break;
+
+            case Op_Return: {
+                uint64_t returnSize = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+                printf(": ReturnSize = %llu", returnSize);
+            } break;
+
+            case Op_Load:
+            case Op_Store: {
+                uint64_t offset = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+
+                uint64_t size = *(uint64_t*)ip;
+                ip += sizeof(uint64_t);
+
+                printf(": Offset = %llu, Size = %llu", offset, size);
+            } break;
+
+            default: {
+            } break;
+        }
+        putchar('\n');
+    }
 }

@@ -3,31 +3,42 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define OPS \
+    OP(Invalid)\
+    OP(Exit)\
+    OP(Push)\
+    OP(Pop)\
+    OP(Dup)\
+    OP(AddI64)\
+    OP(AddU64)\
+    OP(SubI64)\
+    OP(SubU64)\
+    OP(MulI64)\
+    OP(MulU64)\
+    OP(DivI64)\
+    OP(DivU64)\
+    OP(PrintI64)\
+    OP(PrintU64)\
+    OP(Equal)\
+    OP(Jump)\
+    OP(JumpZero)\
+    OP(JumpNonZero)\
+    OP(Call)\
+    OP(Return)\
+    OP(Load)  /* TODO: For arrays make a version which takes the offset (or maybe a offset for the offset) from the stack */ \
+    OP(Store) /* TODO: Same as ^ */ \
+
 typedef enum Op {
-    Op_Invalid,
-    Op_Exit,
-    Op_Push,
-    Op_Pop,
-    Op_Dup,
-    Op_AddI64,
-    Op_AddU64,
-    Op_SubI64,
-    Op_SubU64,
-    Op_MulI64,
-    Op_MulU64,
-    Op_DivI64,
-    Op_DivU64,
-    Op_PrintI64,
-    Op_PrintU64,
-    Op_Equal,
-    Op_Jump,
-    Op_JumpZero,
-    Op_JumpNonZero,
-    Op_Call,
-    Op_Return,
-    Op_Load,  // TODO: For arrays make a version which takes the offset (or maybe a offset for the offset) from the stack
-    Op_Store, // TODO: Same as ^
+#define OP(name) Op_##name,
+    OPS
+#undef OP
 } Op;
+
+#define OP(name) +1
+enum { Op_Count = 0 OPS };
+#undef OP
+
+extern const char* Op_Names[Op_Count];
 
 typedef struct VM {
     uint8_t* Code;
@@ -42,3 +53,5 @@ typedef struct VM {
 bool VM_Create(VM* vm, uint8_t* code, uint64_t codeSize, uint64_t stackSize);
 void VM_Destroy(VM* vm);
 bool VM_Step(VM* vm);
+
+void PrintBytecode(uint8_t* code, uint64_t codeSize);
