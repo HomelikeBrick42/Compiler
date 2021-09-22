@@ -12,7 +12,7 @@ This language does not have a name yet
 ### Features
 - [ ] Pointers
 - [ ] Loading arbitrary c functions
-- [ ] Compile time evaluation of functions for constants``
+- [ ] Compile time evaluation of functions for constants
 
 ## Variables
 
