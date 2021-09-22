@@ -20,6 +20,22 @@ static Type Type_Bool                        = {};
 static AstTypeExpression Type_BoolExpression = {};
 static AstDeclaration Type_BoolDeclaration   = {};
 
+struct {
+    const char* Name;
+    AstDeclaration* Declaration;
+} BuiltinNames[] = { {
+                         .Name        = "type",
+                         .Declaration = &Type_TypeDeclaration,
+                     },
+                     {
+                         .Name        = "int",
+                         .Declaration = &Type_IntegerSignedDeclaration,
+                     },
+                     {
+                         .Name        = "bool",
+                         .Declaration = &Type_BoolDeclaration,
+                     } };
+
 static struct {
     TokenKind Operator;
     Type* Operand;
@@ -72,6 +88,7 @@ void InitTypes() {
     };
     Type_TypeDeclaration.Declaration.ResolvedType = &Type_Type;
     Type_TypeDeclaration.Declaration.Value        = &Type_TypeExpression;
+    Type_TypeDeclaration.Declaration.Constant     = true;
 
     Type_IntegerSigned.Kind           = TypeKind_Integer;
     Type_IntegerSigned.Size           = 8;
@@ -95,6 +112,7 @@ void InitTypes() {
     };
     Type_IntegerSignedDeclaration.Declaration.ResolvedType = &Type_Type;
     Type_IntegerSignedDeclaration.Declaration.Value        = &Type_IntegerSignedExpression;
+    Type_IntegerSignedDeclaration.Declaration.Constant     = true;
 
     Type_Bool.Kind           = TypeKind_Bool;
     Type_Bool.Size           = 1;
@@ -118,6 +136,7 @@ void InitTypes() {
     };
     Type_BoolDeclaration.Declaration.ResolvedType = &Type_Type;
     Type_BoolDeclaration.Declaration.Value        = &Type_BoolExpression;
+    Type_BoolDeclaration.Declaration.Constant     = true;
 }
 
 static Type* ExpressionToType(AstExpression* expression) {
@@ -157,7 +176,17 @@ static Type* ExpressionToType(AstExpression* expression) {
 
         case AstKind_Name: {
             if (expression->Name.ResolvedDeclaration->Declaration.ResolvedType->Kind == TypeKind_Type) {
-                return ExpressionToType(expression->Name.ResolvedDeclaration->Declaration.Value);
+                if (expression->Name.ResolvedDeclaration->Declaration.Constant) {
+                    return ExpressionToType(expression->Name.ResolvedDeclaration->Declaration.Value);
+                } else {
+                    Token nameToken = expression->Name.Token;
+                    fflush(stdout);
+                    fprintf(stderr,
+                            "Name '%.*s' is not a constant\n",
+                            (uint32_t)nameToken.Length,
+                            &nameToken.Source[nameToken.Position]);
+                    return NULL;
+                }
             } else {
                 Token nameToken = expression->Name.Token;
                 fflush(stdout);
@@ -226,7 +255,7 @@ static bool AssertTypesEqual(Type* a, Type* b) {
     return true;
 }
 
-static AstScope** PendingProcedureBodyScopes    = NULL;
+static AstScope** PendingProcedureBodyScopes   = NULL;
 static uint64_t PendingProcedureBodyScopeCount = 0;
 
 bool ResolveAst(Ast* ast, AstScope* parentScope) {
@@ -302,6 +331,8 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
             if (!ResolveAst(ast->Assignment.Operand, parentScope)) {
                 return false;
             }
+
+            // TODO: Make sure operand is not constant
 
             if (!ResolveAst(ast->Assignment.Value, parentScope)) {
                 return false;
@@ -466,9 +497,13 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
             }
 Exit:
             if (!ast->Name.ResolvedDeclaration) {
-                if (nameToken.Length == strlen(Type_IntegerSignedName) &&
-                    strncmp(&nameToken.Source[nameToken.Position], Type_IntegerSignedName, strlen(Type_IntegerSignedName)) == 0) {
-                    ast->Name.ResolvedDeclaration = &Type_IntegerSignedDeclaration;
+                for (uint64_t i = 0; i < sizeof(BuiltinNames) / sizeof(BuiltinNames[0]); i++) {
+                    if (nameToken.Length == strlen(BuiltinNames[i].Name) &&
+                        strncmp(&nameToken.Source[nameToken.Position], BuiltinNames[i].Name, strlen(BuiltinNames[i].Name)) ==
+                            0) {
+                        ast->Name.ResolvedDeclaration = BuiltinNames[i].Declaration;
+                        break;
+                    }
                 }
             }
 
@@ -516,7 +551,8 @@ Exit:
             }
 
             if (ast->Procedure.Body) {
-                PendingProcedureBodyScopes = realloc(PendingProcedureBodyScopes, (PendingProcedureBodyScopeCount + 1) * sizeof(AstScope*));
+                PendingProcedureBodyScopes =
+                    realloc(PendingProcedureBodyScopes, (PendingProcedureBodyScopeCount + 1) * sizeof(AstScope*));
                 PendingProcedureBodyScopes[PendingProcedureBodyScopeCount] = ast->Procedure.Body;
                 PendingProcedureBodyScopeCount++;
 
