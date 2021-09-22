@@ -1,5 +1,19 @@
 # Compiler
 
+## About
+
+This language does not have a name yet
+
+## TODO
+
+### Finishing the language
+- [ ] Type checking
+- [ ] Emitting bytecode
+### Features
+- [ ] Pointers
+- [ ] Loading arbitrary c functions
+- [ ] Compile time evaluation of functions for constants``
+
 ## Variables
 
 ```c
