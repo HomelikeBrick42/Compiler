@@ -3,30 +3,33 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define OPS \
-    OP(Invalid)\
-    OP(Exit)\
-    OP(Push)\
-    OP(Pop)\
-    OP(Dup)\
-    OP(AddI64)\
-    OP(AddU64)\
-    OP(SubI64)\
-    OP(SubU64)\
-    OP(MulI64)\
-    OP(MulU64)\
-    OP(DivI64)\
-    OP(DivU64)\
-    OP(PrintI64)\
-    OP(PrintU64)\
-    OP(Equal)\
-    OP(Jump)\
-    OP(JumpZero)\
-    OP(JumpNonZero)\
-    OP(Call)\
-    OP(Return)\
-    OP(Load)  /* TODO: For arrays make a version which takes the offset (or maybe a offset for the offset) from the stack */ \
-    OP(Store) /* TODO: Same as ^ */ \
+#define OPS                                                                                                                      \
+    OP(Invalid)                                                                                                                  \
+    OP(Exit)                                                                                                                     \
+    OP(Push)                                                                                                                     \
+    OP(Pop)                                                                                                                      \
+    OP(Dup)                                                                                                                      \
+    OP(AddI64)                                                                                                                   \
+    OP(AddU64)                                                                                                                   \
+    OP(SubI64)                                                                                                                   \
+    OP(SubU64)                                                                                                                   \
+    OP(MulI64)                                                                                                                   \
+    OP(MulU64)                                                                                                                   \
+    OP(DivI64)                                                                                                                   \
+    OP(DivU64)                                                                                                                   \
+    OP(PrintI64)                                                                                                                 \
+    OP(PrintU64)                                                                                                                 \
+    OP(Equal)                                                                                                                    \
+    OP(Jump)                                                                                                                     \
+    OP(JumpZero)                                                                                                                 \
+    OP(JumpNonZero)                                                                                                              \
+    OP(Call)                                                                                                                     \
+    OP(Return)                                                                                                                   \
+    OP(LoadRelative) /* TODO: For arrays make a version which takes the offset (or maybe a offset for the offset) from the stack \
+                      */                                                                                                         \
+    OP(StoreRelative) /* TODO: Same as ^ */                                                                                      \
+    OP(LoadAbsolute)  /* TODO: Same as ^ */                                                                                      \
+    OP(StoreAbsolute) /* TODO: Same as ^ */
 
 typedef enum Op {
 #define OP(name) Op_##name,

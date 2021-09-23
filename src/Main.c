@@ -16,7 +16,7 @@ bool Resolver_Test();
 int main(int argc, char** argv) {
     InitTypes();
 
-#if 0
+#if 1
     if (!VM_Test()) {
         return EXIT_FAILURE;
     }
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     }
 #endif
 
-#if 1
+#if 0
     if (!Resolver_Test()) {
         return EXIT_FAILURE;
     }
@@ -66,7 +66,7 @@ bool VM_Test() {
         *(int64_t*)code = 6; // Value
         code += sizeof(int64_t);
 
-        *code++                = Op_Call;
+        *code++          = Op_Call;
         *(uint64_t*)code = sizeof(int64_t); // Arg size
         code += sizeof(uint64_t);
 
@@ -85,7 +85,7 @@ bool VM_Test() {
         *(uint64_t*)code = functionLocation; // Call location
         code += sizeof(uint64_t);
 
-        *code++          = Op_Load;
+        *code++          = Op_LoadRelative;
         *(uint64_t*)code = 0; // Offset
         code += sizeof(uint64_t);
         *(uint64_t*)code = sizeof(int64_t); // Size
@@ -113,7 +113,7 @@ bool VM_Test() {
         *(uint64_t*)code = sizeof(int64_t); // Arg size
         code += sizeof(uint64_t);
 
-        *code++          = Op_Load;
+        *code++          = Op_LoadRelative;
         *(uint64_t*)code = 0; // Offset
         code += sizeof(uint64_t);
         *(uint64_t*)code = sizeof(int64_t); // Size

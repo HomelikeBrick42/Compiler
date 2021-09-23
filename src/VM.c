@@ -258,7 +258,7 @@ bool VM_Step(VM* vm) {
             vm->Sp += returnSize;
         } break;
 
-        case Op_Load: {
+        case Op_LoadRelative: {
             uint64_t offset = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);
 
@@ -271,7 +271,7 @@ bool VM_Step(VM* vm) {
             vm->Sp += size;
         } break;
 
-        case Op_Store: {
+        case Op_StoreRelative: {
             uint64_t offset = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);
 
@@ -281,6 +281,32 @@ bool VM_Step(VM* vm) {
             vm->Sp -= size;
             for (uint64_t i = 0; i < size; i++) {
                 vm->Bp[offset + i] = vm->Sp[i];
+            }
+        } break;
+
+        case Op_LoadAbsolute: {
+            uint64_t offset = *(uint64_t*)vm->Ip;
+            vm->Ip += sizeof(uint64_t);
+
+            uint64_t size = *(uint64_t*)vm->Ip;
+            vm->Ip += sizeof(uint64_t);
+
+            for (uint64_t i = 0; i < size; i++) {
+                vm->Sp[i] = vm->Stack[offset + i];
+            }
+            vm->Sp += size;
+        } break;
+
+        case Op_StoreAbsolute: {
+            uint64_t offset = *(uint64_t*)vm->Ip;
+            vm->Ip += sizeof(uint64_t);
+
+            uint64_t size = *(uint64_t*)vm->Ip;
+            vm->Ip += sizeof(uint64_t);
+
+            vm->Sp -= size;
+            for (uint64_t i = 0; i < size; i++) {
+                vm->Stack[offset + i] = vm->Sp[i];
             }
         } break;
     }
@@ -302,18 +328,8 @@ void PrintBytecode(uint8_t* code, uint64_t codeSize) {
                 printf(": Size = %llu", size);
             } break;
 
-            case Op_Pop: {
-                uint64_t size = *(uint64_t*)ip;
-                ip += sizeof(uint64_t);
-                printf(": Size = %llu", size);
-            } break;
-
-            case Op_Dup: {
-                uint64_t size = *(uint64_t*)ip;
-                ip += sizeof(uint64_t);
-                printf(": Size = %llu", size);
-            } break;
-
+            case Op_Pop:
+            case Op_Dup:
             case Op_Equal: {
                 uint64_t size = *(uint64_t*)ip;
                 ip += sizeof(uint64_t);
@@ -326,14 +342,7 @@ void PrintBytecode(uint8_t* code, uint64_t codeSize) {
                 printf(": Location = %llu", location);
             } break;
 
-            case Op_JumpZero: {
-                uint64_t location = *(uint64_t*)ip;
-                ip += sizeof(uint64_t);
-                uint64_t size = *(uint64_t*)ip;
-                ip += sizeof(uint64_t);
-                printf(": Location = %llu, Size = %llu", location, size);
-            } break;
-
+            case Op_JumpZero:
             case Op_JumpNonZero: {
                 uint64_t location = *(uint64_t*)ip;
                 ip += sizeof(uint64_t);
@@ -354,8 +363,10 @@ void PrintBytecode(uint8_t* code, uint64_t codeSize) {
                 printf(": ReturnSize = %llu", returnSize);
             } break;
 
-            case Op_Load:
-            case Op_Store: {
+            case Op_LoadRelative:
+            case Op_StoreRelative:
+            case Op_LoadAbsolute:
+            case Op_StoreAbsolute: {
                 uint64_t offset = *(uint64_t*)ip;
                 ip += sizeof(uint64_t);
 

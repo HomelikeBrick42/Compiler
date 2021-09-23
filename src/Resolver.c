@@ -390,6 +390,12 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         } break;
 
         case AstKind_Assignment: {
+            if (!parentScope->Scope.ParentScope) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have assignments statements in global scope\n");
+                return false;
+            }
+
             if (!ResolveAst(ast->Assignment.Operand, parentScope)) {
                 return false;
             }
@@ -416,6 +422,12 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         } break;
 
         case AstKind_If: {
+            if (!parentScope->Scope.ParentScope) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have if statements in global scope\n");
+                return false;
+            }
+
             if (!ResolveAst(ast->If.Condition, parentScope)) {
                 return false;
             }
@@ -438,6 +450,12 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         } break;
 
         case AstKind_Return: {
+            if (!parentScope->Scope.ParentScope) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have return statements in global scope\n");
+                return false;
+            }
+
             if (!ResolveAst(ast->Return.Value, parentScope)) {
                 return false;
             }
@@ -446,6 +464,12 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         } break;
 
         case AstKind_Print: {
+            if (!parentScope->Scope.ParentScope) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have print statements in global scope\n");
+                return false;
+            }
+
             if (!ResolveAst(ast->Return.Value, parentScope)) {
                 return false;
             }
