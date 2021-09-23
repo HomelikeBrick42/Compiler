@@ -364,7 +364,7 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
 
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
-            return call;
+            left = call;
         }
 
         uint64_t binaryPrecedence = Parser_GetBinaryOperatorPrecedence(parser->Current.Kind);
