@@ -7,4 +7,4 @@
 #include <stdbool.h>
 
 void InitTypes();
-bool ResolveAst(Ast* ast, AstScope* parentScope);
+bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure);

@@ -16,7 +16,7 @@ bool Resolver_Test();
 int main(int argc, char** argv) {
     InitTypes();
 
-#if 1
+#if 0
     if (!VM_Test()) {
         return EXIT_FAILURE;
     }
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     }
 #endif
 
-#if 0
+#if 1
     if (!Resolver_Test()) {
         return EXIT_FAILURE;
     }
@@ -214,7 +214,7 @@ bool Resolver_Test() {
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
     if (success) {
-        success = ResolveAst(file, NULL);
+        success = ResolveAst(file, NULL, NULL);
     }
 
     Parser_Destroy(&parser);

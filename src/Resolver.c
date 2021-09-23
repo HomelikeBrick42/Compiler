@@ -317,10 +317,10 @@ static bool AssertTypesEqual(Type* a, Type* b) {
     return true;
 }
 
-static AstScope** PendingProcedureBodyScopes   = NULL;
-static uint64_t PendingProcedureBodyScopeCount = 0;
+static AstProcedure** PendingProcedureBodies = NULL;
+static uint64_t PendingProcedureBodyCount    = 0;
 
-bool ResolveAst(Ast* ast, AstScope* parentScope) {
+bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) {
     switch (ast->Resolution) {
         case Resolution_Resolved: {
             return true;
@@ -342,14 +342,14 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
     switch (ast->Kind) {
         case AstKind_Scope: {
             for (uint64_t i = 0; i < ast->Scope.StatementCount; i++) {
-                if (!ResolveAst(ast->Scope.Statements[i], ast)) {
+                if (!ResolveAst(ast->Scope.Statements[i], ast, parentProcedure)) {
                     return false;
                 }
             }
 
-            for (int64_t i = (int64_t)PendingProcedureBodyScopeCount - 1; i >= 0; i--) {
-                PendingProcedureBodyScopeCount--;
-                if (!ResolveAst(PendingProcedureBodyScopes[i], ast)) {
+            for (int64_t i = (int64_t)PendingProcedureBodyCount - 1; i >= 0; i--) {
+                PendingProcedureBodyCount--;
+                if (!ResolveAst(PendingProcedureBodies[i]->Procedure.Body, ast, PendingProcedureBodies[i])) {
                     return false;
                 }
             }
@@ -357,7 +357,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
 
         case AstKind_Declaration: {
             if (ast->Declaration.Type) {
-                if (!ResolveAst(ast->Declaration.Type, parentScope)) {
+                if (!ResolveAst(ast->Declaration.Type, parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -368,7 +368,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
             }
 
             if (ast->Declaration.Value) {
-                if (!ResolveAst(ast->Declaration.Value, parentScope)) {
+                if (!ResolveAst(ast->Declaration.Value, parentScope, parentProcedure)) {
                     return false;
                 }
             }
@@ -396,7 +396,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            if (!ResolveAst(ast->Assignment.Operand, parentScope)) {
+            if (!ResolveAst(ast->Assignment.Operand, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -412,7 +412,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            if (!ResolveAst(ast->Assignment.Value, parentScope)) {
+            if (!ResolveAst(ast->Assignment.Value, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -428,7 +428,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            if (!ResolveAst(ast->If.Condition, parentScope)) {
+            if (!ResolveAst(ast->If.Condition, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -438,12 +438,12 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            if (!ResolveAst(ast->If.ThenScope, parentScope)) {
+            if (!ResolveAst(ast->If.ThenScope, parentScope, parentProcedure)) {
                 return false;
             }
 
             if (ast->If.ElseScope) {
-                if (!ResolveAst(ast->If.ElseScope, parentScope)) {
+                if (!ResolveAst(ast->If.ElseScope, parentScope, parentProcedure)) {
                     return false;
                 }
             }
@@ -456,11 +456,13 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            if (!ResolveAst(ast->Return.Value, parentScope)) {
+            if (!ResolveAst(ast->Return.Value, parentScope, parentProcedure)) {
                 return false;
             }
 
-            // TODO: Check compatible with procedure return type
+            if (!AssertTypesEqual(parentProcedure->Procedure.ResolvedReturnType, ast->Return.Value->ResolvedType)) {
+                return false;
+            }
         } break;
 
         case AstKind_Print: {
@@ -470,7 +472,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            if (!ResolveAst(ast->Return.Value, parentScope)) {
+            if (!ResolveAst(ast->Return.Value, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -482,7 +484,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         } break;
 
         case AstKind_Unary: {
-            if (!ResolveAst(ast->Unary.Operand, parentScope)) {
+            if (!ResolveAst(ast->Unary.Operand, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -508,11 +510,11 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
         } break;
 
         case AstKind_Binary: {
-            if (!ResolveAst(ast->Binary.Left, parentScope)) {
+            if (!ResolveAst(ast->Binary.Left, parentScope, parentProcedure)) {
                 return false;
             }
 
-            if (!ResolveAst(ast->Binary.Right, parentScope)) {
+            if (!ResolveAst(ast->Binary.Right, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -577,7 +579,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                                    &declaration->Declaration.Name.Source[declaration->Declaration.Name.Position],
                                    nameToken.Length) == 0) {
                             if (!ast->Name.ResolvedDeclaration) {
-                                ResolveAst(declaration, scope);
+                                ResolveAst(declaration, scope, parentProcedure);
                                 ast->Name.ResolvedDeclaration = declaration;
                             } else {
                                 fflush(stdout);
@@ -619,7 +621,7 @@ Exit:
 
         case AstKind_Procedure: {
             for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
-                if (!ResolveAst(ast->Procedure.Parameters[i], parentScope)) {
+                if (!ResolveAst(ast->Procedure.Parameters[i], parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -635,7 +637,7 @@ Exit:
             }
 
             if (ast->Procedure.ReturnType) {
-                if (!ResolveAst(ast->Procedure.ReturnType, parentScope)) {
+                if (!ResolveAst(ast->Procedure.ReturnType, parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -646,10 +648,9 @@ Exit:
             }
 
             if (ast->Procedure.Body) {
-                PendingProcedureBodyScopes =
-                    realloc(PendingProcedureBodyScopes, (PendingProcedureBodyScopeCount + 1) * sizeof(AstScope*));
-                PendingProcedureBodyScopes[PendingProcedureBodyScopeCount] = ast->Procedure.Body;
-                PendingProcedureBodyScopeCount++;
+                PendingProcedureBodies = realloc(PendingProcedureBodies, (PendingProcedureBodyCount + 1) * sizeof(AstScope*));
+                PendingProcedureBodies[PendingProcedureBodyCount] = ast;
+                PendingProcedureBodyCount++;
 
                 TypeProcedure* type = calloc(1, sizeof(TypeProcedure));
                 type->Kind          = TypeKind_Procedure;
@@ -683,7 +684,7 @@ Exit:
         } break;
 
         case AstKind_Call: {
-            if (!ResolveAst(ast->Call.Operand, parentScope)) {
+            if (!ResolveAst(ast->Call.Operand, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -694,7 +695,7 @@ Exit:
             }
 
             for (uint64_t i = 0; i < ast->Call.ArgumentCount; i++) {
-                if (!ResolveAst(ast->Call.Arguments[i], parentScope)) {
+                if (!ResolveAst(ast->Call.Arguments[i], parentScope, parentProcedure)) {
                     return false;
                 }
             }
