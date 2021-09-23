@@ -394,7 +394,17 @@ bool ResolveAst(Ast* ast, AstScope* parentScope) {
                 return false;
             }
 
-            // TODO: Make sure operand is not constant
+            if (ast->Assignment.Operand->Kind != AstKind_Name) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot assign to something that is not a name\n");
+                return false;
+            }
+
+            if (ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.Constant) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot assign to a constant\n");
+                return false;
+            }
 
             if (!ResolveAst(ast->Assignment.Value, parentScope)) {
                 return false;

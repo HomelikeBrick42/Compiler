@@ -6,11 +6,17 @@ main :: () {
     c = c - a;
     print c;
 
-    print_sum(7, -5);
-
-    print_sum :: (a: int, b: int) {
-        print a + b;
+    func := (a: int, b: int) -> int {
+        return a + b;
     };
+
+    print func(7, -5);
+
+    func = (a: int, b: int) -> int {
+        return a * b;
+    };
+
+    print func(7, -5);
 };
 
 factorial :: (n: int) -> int {
