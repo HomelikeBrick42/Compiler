@@ -80,12 +80,11 @@ AstScope* Parser_ParseFile(Parser* parser) {
 }
 
 AstStatement* Parser_ParseStatement(Parser* parser) {
-    switch (parser->Current.Kind) {
-        case TokenKind_Semicolon: {
-            Parser_ExpectToken(parser, TokenKind_Semicolon);
-            return Parser_ParseStatement(parser);
-        } break;
+    while (parser->Current.Kind == TokenKind_Semicolon) {
+        Parser_ExpectToken(parser, TokenKind_Semicolon);
+    }
 
+    switch (parser->Current.Kind) {
         case TokenKind_KeywordIf: {
             AstIf* iff = calloc(1, sizeof(AstIf));
             iff->Kind  = AstKind_If;

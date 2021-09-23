@@ -23,48 +23,110 @@ static AstDeclaration Type_BoolDeclaration   = {};
 struct {
     const char* Name;
     AstDeclaration* Declaration;
-} BuiltinNames[] = { {
-                         .Name        = "type",
-                         .Declaration = &Type_TypeDeclaration,
-                     },
-                     {
-                         .Name        = "int",
-                         .Declaration = &Type_IntegerSignedDeclaration,
-                     },
-                     {
-                         .Name        = "bool",
-                         .Declaration = &Type_BoolDeclaration,
-                     } };
+} BuiltinNames[] = {
+    {
+        .Name        = "type",
+        .Declaration = &Type_TypeDeclaration,
+    },
+    {
+        .Name        = "int",
+        .Declaration = &Type_IntegerSignedDeclaration,
+    },
+    {
+        .Name        = "bool",
+        .Declaration = &Type_BoolDeclaration,
+    },
+};
 
 static struct {
     TokenKind Operator;
     Type* Operand;
     Type* ResultType;
-} UnaryOperators[] = {};
+} UnaryOperators[] = {
+    {
+        .Operator   = TokenKind_Plus,
+        .Operand    = &Type_IntegerSigned,
+        .ResultType = &Type_IntegerSigned,
+    },
+    {
+        .Operator   = TokenKind_Minus,
+        .Operand    = &Type_IntegerSigned,
+        .ResultType = &Type_IntegerSigned,
+    },
+    {
+        .Operator   = TokenKind_Bang,
+        .Operand    = &Type_Bool,
+        .ResultType = &Type_Bool,
+    },
+};
 
 static struct {
     TokenKind Operator;
     Type* Left;
     Type* Right;
     Type* ResultType;
-} BinaryOperators[] = { {
-                            .Operator   = TokenKind_EqualsEquals,
-                            .Left       = &Type_IntegerSigned,
-                            .Right      = &Type_IntegerSigned,
-                            .ResultType = &Type_Bool,
-                        },
-                        {
-                            .Operator   = TokenKind_Minus,
-                            .Left       = &Type_IntegerSigned,
-                            .Right      = &Type_IntegerSigned,
-                            .ResultType = &Type_IntegerSigned,
-                        },
-                        {
-                            .Operator   = TokenKind_Asterisk,
-                            .Left       = &Type_IntegerSigned,
-                            .Right      = &Type_IntegerSigned,
-                            .ResultType = &Type_IntegerSigned,
-                        } };
+} BinaryOperators[] = {
+    {
+        .Operator   = TokenKind_Plus,
+        .Left       = &Type_IntegerSigned,
+        .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_IntegerSigned,
+    },
+    {
+        .Operator   = TokenKind_Minus,
+        .Left       = &Type_IntegerSigned,
+        .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_IntegerSigned,
+    },
+    {
+        .Operator   = TokenKind_Asterisk,
+        .Left       = &Type_IntegerSigned,
+        .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_IntegerSigned,
+    },
+    {
+        .Operator   = TokenKind_Slash,
+        .Left       = &Type_IntegerSigned,
+        .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_IntegerSigned,
+    },
+    {
+        .Operator   = TokenKind_BangEquals,
+        .Left       = &Type_Type,
+        .Right      = &Type_Type,
+        .ResultType = &Type_Type,
+    },
+    {
+        .Operator   = TokenKind_EqualsEquals,
+        .Left       = &Type_Type,
+        .Right      = &Type_Type,
+        .ResultType = &Type_Type,
+    },
+    {
+        .Operator   = TokenKind_BangEquals,
+        .Left       = &Type_IntegerSigned,
+        .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_Bool,
+    },
+    {
+        .Operator   = TokenKind_EqualsEquals,
+        .Left       = &Type_IntegerSigned,
+        .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_Bool,
+    },
+    {
+        .Operator   = TokenKind_BangEquals,
+        .Left       = &Type_Bool,
+        .Right      = &Type_Bool,
+        .ResultType = &Type_Bool,
+    },
+    {
+        .Operator   = TokenKind_EqualsEquals,
+        .Left       = &Type_Bool,
+        .Right      = &Type_Bool,
+        .ResultType = &Type_Bool,
+    },
+};
 
 void InitTypes() {
     Type_Type.Kind = TypeKind_Type;
@@ -499,8 +561,7 @@ Exit:
             if (!ast->Name.ResolvedDeclaration) {
                 for (uint64_t i = 0; i < sizeof(BuiltinNames) / sizeof(BuiltinNames[0]); i++) {
                     if (nameToken.Length == strlen(BuiltinNames[i].Name) &&
-                        strncmp(&nameToken.Source[nameToken.Position], BuiltinNames[i].Name, strlen(BuiltinNames[i].Name)) ==
-                            0) {
+                        strncmp(&nameToken.Source[nameToken.Position], BuiltinNames[i].Name, strlen(BuiltinNames[i].Name)) == 0) {
                         ast->Name.ResolvedDeclaration = BuiltinNames[i].Declaration;
                         break;
                     }

@@ -6,10 +6,10 @@ main :: () {
     c = c - a;
     print c;
 
-    print_square(5);
+    print_sum(7, -5);
 
-    print_square :: (number: int) {
-        print number * number;
+    print_sum :: (a: int, b: int) {
+        print a + b;
     };
 };
 
