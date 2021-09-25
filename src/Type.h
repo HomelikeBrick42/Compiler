@@ -11,6 +11,7 @@
     TYPE_KIND(Integer, { bool Signed; }) \
     TYPE_KIND(Float, {})                 \
     TYPE_KIND(Bool, {})                  \
+    TYPE_KIND(Void, {})                  \
                                          \
     TYPE_KIND(Procedure, {               \
         Type** ParameterTypes;           \
@@ -69,6 +70,11 @@ extern const char* Type_BoolName;
 extern Type Type_Bool;
 extern AstTypeExpression Type_BoolExpression;
 extern AstDeclaration Type_BoolDeclaration;
+
+extern const char* Type_VoidName;
+extern Type Type_Void;
+extern AstTypeExpression Type_VoidExpression;
+extern AstDeclaration Type_VoidDeclaration;
 
 void InitTypes();
 bool TypesEqual(Type* a, Type* b);

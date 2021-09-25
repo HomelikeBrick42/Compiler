@@ -25,6 +25,7 @@ bool TypesEqual(Type* a, Type* b) {
         case TypeKind_Type:
         case TypeKind_Float:
         case TypeKind_Bool:
+        case TypeKind_Void:
             return true;
 
         case TypeKind_Integer:
@@ -69,6 +70,11 @@ const char* Type_BoolName             = "bool";
 Type Type_Bool                        = {};
 AstTypeExpression Type_BoolExpression = {};
 AstDeclaration Type_BoolDeclaration   = {};
+
+const char* Type_VoidName             = "void";
+Type Type_Void                        = {};
+AstTypeExpression Type_VoidExpression = {};
+AstDeclaration Type_VoidDeclaration   = {};
 
 void InitTypes() {
     Type_Type.Kind = TypeKind_Type;
@@ -142,9 +148,8 @@ void InitTypes() {
     Type_IntegerUnsignedDeclaration.Declaration.Value        = &Type_IntegerUnsignedExpression;
     Type_IntegerUnsignedDeclaration.Declaration.Constant     = true;
 
-    Type_Bool.Kind           = TypeKind_Bool;
-    Type_Bool.Size           = 1;
-    Type_Bool.Integer.Signed = true;
+    Type_Bool.Kind = TypeKind_Bool;
+    Type_Bool.Size = 1;
 
     Type_BoolExpression.Kind                = AstKind_TypeExpression;
     Type_BoolExpression.Resolution          = Resolution_Resolved;
@@ -165,4 +170,27 @@ void InitTypes() {
     Type_BoolDeclaration.Declaration.ResolvedType = &Type_Type;
     Type_BoolDeclaration.Declaration.Value        = &Type_BoolExpression;
     Type_BoolDeclaration.Declaration.Constant     = true;
+
+    Type_Void.Kind = TypeKind_Void;
+    Type_Void.Size = 0;
+
+    Type_VoidExpression.Kind                = AstKind_TypeExpression;
+    Type_VoidExpression.Resolution          = Resolution_Resolved;
+    Type_VoidExpression.ResolvedType        = &Type_Type;
+    Type_VoidExpression.TypeExpression.Type = &Type_Void;
+
+    Type_VoidDeclaration.Kind             = AstKind_Declaration;
+    Type_VoidDeclaration.Resolution       = Resolution_Resolved;
+    Type_VoidDeclaration.Declaration.Name = (Token){
+        .Kind     = TokenKind_Identifier,
+        .FilePath = "Builtin",
+        .Source   = Type_VoidName,
+        .Position = 0,
+        .Line     = 1,
+        .Column   = 1,
+        .Length   = strlen(Type_VoidName),
+    };
+    Type_VoidDeclaration.Declaration.ResolvedType = &Type_Type;
+    Type_VoidDeclaration.Declaration.Value        = &Type_VoidExpression;
+    Type_VoidDeclaration.Declaration.Constant     = true;
 }

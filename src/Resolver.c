@@ -25,6 +25,10 @@ struct {
         .Name        = "bool",
         .Declaration = &Type_BoolDeclaration,
     },
+    {
+        .Name        = "void",
+        .Declaration = &Type_VoidDeclaration,
+    },
 };
 
 static struct {
@@ -311,7 +315,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                     return false;
                 }
 
-                if (PendingProcedureBodies[i]->ResolvedType->Procedure.ReturnType) {
+                if (!TypesEqual(PendingProcedureBodies[i]->ResolvedType->Procedure.ReturnType, &Type_Void)) {
                     if (!BodyReturns(PendingProcedureBodies[i]->Procedure.Body)) {
                         fflush(stdout);
                         fprintf(stderr, "All control paths must return\n");
@@ -701,6 +705,8 @@ Exit:
                 if (!ast->Procedure.ResolvedReturnType) {
                     return false;
                 }
+            } else {
+                ast->Procedure.ResolvedReturnType = &Type_Void;
             }
 
             if (ast->Procedure.Body) {
@@ -720,9 +726,7 @@ Exit:
                     }
                 }
 
-                if (ast->Procedure.ResolvedReturnType) {
-                    type->Procedure.ReturnType = ast->Procedure.ResolvedReturnType;
-                }
+                type->Procedure.ReturnType = ast->Procedure.ResolvedReturnType;
 
                 ast->ResolvedType = type;
             } else {
