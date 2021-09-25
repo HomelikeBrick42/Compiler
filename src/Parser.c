@@ -98,11 +98,10 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
                 iff->If.ThenStatement = Parser_ParseStatement(parser);
             } else {
                 iff->If.ThenStatement = Parser_ParseScope(parser, true);
-            }
-
-            if (parser->Current.Kind == TokenKind_KeywordElse) {
-                Parser_ExpectToken(parser, TokenKind_KeywordElse);
-                iff->If.ElseStatement = Parser_ParseStatement(parser);
+                if (parser->Current.Kind == TokenKind_KeywordElse) {
+                    Parser_ExpectToken(parser, TokenKind_KeywordElse);
+                    iff->If.ElseStatement = Parser_ParseStatement(parser);
+                }
             }
 
             return iff;
