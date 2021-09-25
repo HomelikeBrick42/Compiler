@@ -15,6 +15,11 @@ static Type Type_IntegerSigned                        = {};
 static AstTypeExpression Type_IntegerSignedExpression = {};
 static AstDeclaration Type_IntegerSignedDeclaration   = {};
 
+static const char* Type_IntegerUnsignedName             = "uint";
+static Type Type_IntegerUnsigned                        = {};
+static AstTypeExpression Type_IntegerUnsignedExpression = {};
+static AstDeclaration Type_IntegerUnsignedDeclaration   = {};
+
 static const char* Type_BoolName             = "bool";
 static Type Type_Bool                        = {};
 static AstTypeExpression Type_BoolExpression = {};
@@ -31,6 +36,10 @@ struct {
     {
         .Name        = "int",
         .Declaration = &Type_IntegerSignedDeclaration,
+    },
+    {
+        .Name        = "uint",
+        .Declaration = &Type_IntegerUnsignedDeclaration,
     },
     {
         .Name        = "bool",
@@ -91,6 +100,30 @@ static struct {
         .ResultType = &Type_IntegerSigned,
     },
     {
+        .Operator   = TokenKind_Plus,
+        .Left       = &Type_IntegerUnsigned,
+        .Right      = &Type_IntegerUnsigned,
+        .ResultType = &Type_IntegerUnsigned,
+    },
+    {
+        .Operator   = TokenKind_Minus,
+        .Left       = &Type_IntegerUnsigned,
+        .Right      = &Type_IntegerUnsigned,
+        .ResultType = &Type_IntegerUnsigned,
+    },
+    {
+        .Operator   = TokenKind_Asterisk,
+        .Left       = &Type_IntegerUnsigned,
+        .Right      = &Type_IntegerUnsigned,
+        .ResultType = &Type_IntegerUnsigned,
+    },
+    {
+        .Operator   = TokenKind_Slash,
+        .Left       = &Type_IntegerUnsigned,
+        .Right      = &Type_IntegerUnsigned,
+        .ResultType = &Type_IntegerUnsigned,
+    },
+    {
         .Operator   = TokenKind_BangEquals,
         .Left       = &Type_Type,
         .Right      = &Type_Type,
@@ -112,6 +145,18 @@ static struct {
         .Operator   = TokenKind_EqualsEquals,
         .Left       = &Type_IntegerSigned,
         .Right      = &Type_IntegerSigned,
+        .ResultType = &Type_Bool,
+    },
+    {
+        .Operator   = TokenKind_BangEquals,
+        .Left       = &Type_IntegerUnsigned,
+        .Right      = &Type_IntegerUnsigned,
+        .ResultType = &Type_Bool,
+    },
+    {
+        .Operator   = TokenKind_EqualsEquals,
+        .Left       = &Type_IntegerUnsigned,
+        .Right      = &Type_IntegerUnsigned,
         .ResultType = &Type_Bool,
     },
     {
@@ -175,6 +220,30 @@ void InitTypes() {
     Type_IntegerSignedDeclaration.Declaration.ResolvedType = &Type_Type;
     Type_IntegerSignedDeclaration.Declaration.Value        = &Type_IntegerSignedExpression;
     Type_IntegerSignedDeclaration.Declaration.Constant     = true;
+
+    Type_IntegerUnsigned.Kind           = TypeKind_Integer;
+    Type_IntegerUnsigned.Size           = 8;
+    Type_IntegerUnsigned.Integer.Signed = false;
+
+    Type_IntegerUnsignedExpression.Kind                = AstKind_TypeExpression;
+    Type_IntegerUnsignedExpression.Resolution          = Resolution_Resolved;
+    Type_IntegerUnsignedExpression.ResolvedType        = &Type_Type;
+    Type_IntegerUnsignedExpression.TypeExpression.Type = &Type_IntegerUnsigned;
+
+    Type_IntegerUnsignedDeclaration.Kind             = AstKind_Declaration;
+    Type_IntegerUnsignedDeclaration.Resolution       = Resolution_Resolved;
+    Type_IntegerUnsignedDeclaration.Declaration.Name = (Token){
+        .Kind     = TokenKind_Identifier,
+        .FilePath = "Builtin",
+        .Source   = Type_IntegerUnsignedName,
+        .Position = 0,
+        .Line     = 1,
+        .Column   = 1,
+        .Length   = strlen(Type_IntegerUnsignedName),
+    };
+    Type_IntegerUnsignedDeclaration.Declaration.ResolvedType = &Type_Type;
+    Type_IntegerUnsignedDeclaration.Declaration.Value        = &Type_IntegerUnsignedExpression;
+    Type_IntegerUnsignedDeclaration.Declaration.Constant     = true;
 
     Type_Bool.Kind           = TypeKind_Bool;
     Type_Bool.Size           = 1;
@@ -320,7 +389,7 @@ static bool AssertTypesEqual(Type* a, Type* b) {
 static AstProcedure** PendingProcedureBodies = NULL;
 static uint64_t PendingProcedureBodyCount    = 0;
 
-bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) {
+bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedure* parentProcedure) {
     switch (ast->Resolution) {
         case Resolution_Resolved: {
             return true;
@@ -342,22 +411,43 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
     switch (ast->Kind) {
         case AstKind_Scope: {
             for (uint64_t i = 0; i < ast->Scope.StatementCount; i++) {
-                if (!ResolveAst(ast->Scope.Statements[i], ast, parentProcedure)) {
+                if (!ResolveAst(ast->Scope.Statements[i], NULL, ast, parentProcedure)) {
                     return false;
                 }
             }
 
             for (int64_t i = (int64_t)PendingProcedureBodyCount - 1; i >= 0; i--) {
                 PendingProcedureBodyCount--;
-                if (!ResolveAst(PendingProcedureBodies[i]->Procedure.Body, ast, PendingProcedureBodies[i])) {
+                if (!ResolveAst(PendingProcedureBodies[i]->Procedure.Body, NULL, ast, PendingProcedureBodies[i])) {
                     return false;
                 }
             }
         } break;
 
+        case AstKind_Transmute: {
+            if (!ResolveAst(ast->Transmute.Type, &Type_Type, parentScope, parentProcedure)) {
+                return false;
+            }
+
+            ast->ResolvedType = ExpressionToType(ast->Transmute.Type);
+            if (!ast->ResolvedType) {
+                return false;
+            }
+
+            if (!ResolveAst(ast->Transmute.Expression, ast->ResolvedType, parentScope, parentProcedure)) {
+                return false;
+            }
+
+            if (ast->ResolvedType->Size != ast->Transmute.Expression->ResolvedType->Size) {
+                fflush(stdout);
+                fprintf(stderr, "Can only transmute to types of the same size\n");
+                return false;
+            }
+        } break;
+
         case AstKind_Declaration: {
             if (ast->Declaration.Type) {
-                if (!ResolveAst(ast->Declaration.Type, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Declaration.Type, &Type_Type, parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -368,7 +458,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
             }
 
             if (ast->Declaration.Value) {
-                if (!ResolveAst(ast->Declaration.Value, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Declaration.Value, ast->Declaration.ResolvedType, parentScope, parentProcedure)) {
                     return false;
                 }
             }
@@ -396,7 +486,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
                 return false;
             }
 
-            if (!ResolveAst(ast->Assignment.Operand, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Assignment.Operand, NULL, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -412,7 +502,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
                 return false;
             }
 
-            if (!ResolveAst(ast->Assignment.Value, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Assignment.Value, ast->Assignment.Operand->ResolvedType, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -428,7 +518,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
                 return false;
             }
 
-            if (!ResolveAst(ast->If.Condition, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->If.Condition, &Type_Bool, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -438,12 +528,12 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
                 return false;
             }
 
-            if (!ResolveAst(ast->If.ThenScope, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->If.ThenScope, NULL, parentScope, parentProcedure)) {
                 return false;
             }
 
             if (ast->If.ElseScope) {
-                if (!ResolveAst(ast->If.ElseScope, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->If.ElseScope, NULL, parentScope, parentProcedure)) {
                     return false;
                 }
             }
@@ -457,7 +547,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
             }
 
             if (ast->Return.Value) {
-                if (!ResolveAst(ast->Return.Value, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Return.Value, parentProcedure->Procedure.ResolvedReturnType, parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -474,7 +564,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
                 return false;
             }
 
-            if (!ResolveAst(ast->Print.Value, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Print.Value, NULL, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -486,7 +576,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
         } break;
 
         case AstKind_Unary: {
-            if (!ResolveAst(ast->Unary.Operand, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Unary.Operand, expectedType, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -512,11 +602,16 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
         } break;
 
         case AstKind_Binary: {
-            if (!ResolveAst(ast->Binary.Left, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Binary.Left, expectedType, parentScope, parentProcedure)) {
                 return false;
             }
 
-            if (!ResolveAst(ast->Binary.Right, parentScope, parentProcedure)) {
+            // TODO: Is this correct?
+            if (ast->Binary.Left->ResolvedType) {
+                expectedType = ast->Binary.Left->ResolvedType;
+            }
+
+            if (!ResolveAst(ast->Binary.Right, expectedType, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -546,7 +641,11 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
         } break;
 
         case AstKind_Integer: {
-            ast->ResolvedType = &Type_IntegerSigned;
+            if (expectedType && expectedType->Kind == TypeKind_Integer) {
+                ast->ResolvedType = expectedType;
+            } else {
+                ast->ResolvedType = &Type_IntegerSigned;
+            }
         } break;
 
         case AstKind_Name: {
@@ -581,7 +680,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
                                    &declaration->Declaration.Name.Source[declaration->Declaration.Name.Position],
                                    nameToken.Length) == 0) {
                             if (!ast->Name.ResolvedDeclaration) {
-                                ResolveAst(declaration, scope, parentProcedure);
+                                ResolveAst(declaration, NULL, scope, parentProcedure);
                                 ast->Name.ResolvedDeclaration = declaration;
                             } else {
                                 fflush(stdout);
@@ -623,7 +722,7 @@ Exit:
 
         case AstKind_Procedure: {
             for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
-                if (!ResolveAst(ast->Procedure.Parameters[i], parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Procedure.Parameters[i], NULL, parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -639,7 +738,7 @@ Exit:
             }
 
             if (ast->Procedure.ReturnType) {
-                if (!ResolveAst(ast->Procedure.ReturnType, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Procedure.ReturnType, NULL, parentScope, parentProcedure)) {
                     return false;
                 }
 
@@ -686,7 +785,7 @@ Exit:
         } break;
 
         case AstKind_Call: {
-            if (!ResolveAst(ast->Call.Operand, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Call.Operand, NULL, parentScope, parentProcedure)) {
                 return false;
             }
 
@@ -696,18 +795,21 @@ Exit:
                 return false;
             }
 
-            for (uint64_t i = 0; i < ast->Call.ArgumentCount; i++) {
-                if (!ResolveAst(ast->Call.Arguments[i], parentScope, parentProcedure)) {
-                    return false;
-                }
-            }
-
             TypeProcedure* type = ast->Call.Operand->ResolvedType;
 
             if (ast->Call.ArgumentCount != type->Procedure.ParameterTypeCount) {
                 fflush(stdout);
                 fprintf(stderr, "Wrong number of arguments in procedure call\n");
                 return false;
+            }
+
+            for (uint64_t i = 0; i < ast->Call.ArgumentCount; i++) {
+                if (!ResolveAst(ast->Call.Arguments[i],
+                                ast->Call.Operand->ResolvedType->Procedure.ParameterTypes[i],
+                                parentScope,
+                                parentProcedure)) {
+                    return false;
+                }
             }
 
             for (uint64_t i = 0; i < ast->Call.ArgumentCount; i++) {

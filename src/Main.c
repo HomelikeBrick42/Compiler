@@ -13,7 +13,7 @@ bool VM_Test();
 bool Lexer_Test();
 bool Parser_Test();
 bool Resolver_Test();
-bool Emitter_Test();
+bool Emitter_Test(const char* filepath);
 
 int main(int argc, char** argv) {
     InitTypes();
@@ -43,7 +43,11 @@ int main(int argc, char** argv) {
 #endif
 
 #if 1
-    if (!Emitter_Test()) {
+    const char* filepath = "./test.lang";
+    if (argc >= 2) {
+        filepath = argv[1];
+    }
+    if (!Emitter_Test(filepath)) {
         return EXIT_FAILURE;
     }
 #endif
@@ -222,7 +226,7 @@ bool Resolver_Test() {
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
     if (success) {
-        success = ResolveAst(file, NULL, NULL);
+        success = ResolveAst(file, NULL, NULL, NULL);
     }
 
     Parser_Destroy(&parser);
@@ -230,9 +234,9 @@ bool Resolver_Test() {
     return success;
 }
 
-bool Emitter_Test() {
+bool Emitter_Test(const char* filepath) {
     Parser parser;
-    if (!Parser_Create(&parser, "./test.lang")) {
+    if (!Parser_Create(&parser, filepath)) {
         return false;
     }
 
@@ -243,7 +247,7 @@ bool Emitter_Test() {
         return false;
     }
 
-    success = ResolveAst(file, NULL, NULL);
+    success = ResolveAst(file, NULL, NULL, NULL);
     if (!success) {
         return false;
     }
@@ -256,6 +260,8 @@ bool Emitter_Test() {
     Emitter_Emit(&emitter, file);
 
     PrintBytecode(emitter.Code, emitter.CodeSize);
+
+    printf("\n\n");
 
     VM vm;
     if (!VM_Create(&vm, emitter.Code, emitter.CodeSize, 1024 * 1024)) {

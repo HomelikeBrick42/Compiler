@@ -304,6 +304,9 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
 
 uint64_t Parser_GetUnaryOperatorPrecedence(TokenKind kind) {
     switch (kind) {
+        case TokenKind_KeywordTransmute:
+            return 5;
+
         case TokenKind_Plus:
         case TokenKind_Minus:
         case TokenKind_Bang:
@@ -338,13 +341,27 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
 
     uint64_t unaryPrecedence = Parser_GetUnaryOperatorPrecedence(parser->Current.Kind);
     if (unaryPrecedence != 0) {
-        AstUnary* unary = calloc(1, sizeof(AstUnary));
-        unary->Kind     = AstKind_Unary;
+        if (parser->Current.Kind == TokenKind_KeywordTransmute) {
+            Parser_ExpectToken(parser, TokenKind_KeywordTransmute);
 
-        unary->Unary.Operator = Parser_NextToken(parser);
-        unary->Unary.Operand  = Parser_ParseBinaryExpression(parser, unaryPrecedence);
+            AstTransmute* transmute = calloc(1, sizeof(AstTransmute));
+            transmute->Kind = AstKind_Transmute;
 
-        left = unary;
+            Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
+            transmute->Transmute.Type = Parser_ParseExpression(parser);
+            Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
+
+            transmute->Transmute.Expression = Parser_ParseBinaryExpression(parser, unaryPrecedence);
+            left = transmute;
+        } else {
+            AstUnary* unary = calloc(1, sizeof(AstUnary));
+            unary->Kind     = AstKind_Unary;
+
+            unary->Unary.Operator = Parser_NextToken(parser);
+            unary->Unary.Operand  = Parser_ParseBinaryExpression(parser, unaryPrecedence);
+
+            left = unary;
+        }
     } else {
         left = Parser_ParsePrimaryExpression(parser);
     }

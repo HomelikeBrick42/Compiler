@@ -4,7 +4,10 @@
 // b :: 5;
 
 main :: () {
-    a := 6;
+    test: uint = 5 + 5;
+    print test;
+
+    a: uint = 6;
     b := factorial(a);
     print b;
     c := b;
@@ -24,7 +27,7 @@ main :: () {
     print func(7, -5);
 };
 
-factorial :: (n: int) -> int {
+factorial :: (n: uint) -> uint {
     if n == 1 {
         return 1;
     } else {

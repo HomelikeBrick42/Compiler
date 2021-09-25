@@ -26,7 +26,7 @@ void Emitter_Destroy(Emitter* emitter);
 
 void Emitter_Emit(Emitter* emitter, Ast* ast);
 void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast* ast, bool global);
-void Emitter_EmitAst(Emitter* emitter, Ast* ast);
+void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization);
 
 void Emitter_EmitOp(Emitter* emitter, Op op);
 void Emitter_EmitI64(Emitter* emitter, int64_t value);

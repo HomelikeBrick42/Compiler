@@ -63,6 +63,11 @@
         AstExpression* Right;                   \
     })                                          \
                                                 \
+    AST_KIND(Transmute, {                       \
+        AstExpression* Type;                    \
+        AstExpression* Expression;              \
+    })                                          \
+                                                \
     AST_KIND(Integer, { Token Token; })         \
     /* AST_KIND(Float, { Token Token; }) */     \
                                                 \

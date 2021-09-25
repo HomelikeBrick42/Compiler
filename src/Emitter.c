@@ -30,6 +30,10 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
             }
         } break;
 
+        case AstKind_Transmute: {
+            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->Transmute.Expression, global);
+        } break;
+
         case AstKind_Declaration: {
             if (global || ast->Declaration.Constant) {
                 ast->Declaration.GlobalOffset = true;
@@ -148,7 +152,7 @@ void Emitter_Emit(Emitter* emitter, Ast* ast) {
 
     for (uint64_t i = 0; i < emitter->ConstantCount; i++) {
         // TODO: Sort these so constants get initialized in the right order
-        Emitter_EmitAst(emitter, emitter->Constants[i]);
+        Emitter_EmitAst(emitter, emitter->Constants[i], true);
     }
 
     Emitter_EmitOp(emitter, Op_LoadAbsolute);
@@ -168,11 +172,11 @@ void Emitter_Emit(Emitter* emitter, Ast* ast) {
                 *(uint64_t*)&emitter->Code[emitter->PendingProcedureCallLocation[i].Location] = emitter->CodeSize;
             }
         }
-        Emitter_EmitAst(emitter, procedure->Procedure.Body);
+        Emitter_EmitAst(emitter, procedure->Procedure.Body, false);
     }
 }
 
-void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
+void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
     switch (ast->Kind) {
         case AstKind_Scope: {
             if (!ast->Scope.Global && !ast->Scope.Nested) {
@@ -180,7 +184,7 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
                 Emitter_EmitU64(emitter, ast->Scope.DeclarationOffset);
             }
             for (uint64_t i = 0; i < ast->Scope.StatementCount; i++) {
-                Emitter_EmitAst(emitter, ast->Scope.Statements[i]);
+                Emitter_EmitAst(emitter, ast->Scope.Statements[i], constantInitialization);
             }
             if (!ast->Scope.Global && !ast->Scope.Nested) {
                 Emitter_EmitOp(emitter, Op_Return);
@@ -188,19 +192,25 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
             }
         } break;
 
+        case AstKind_Transmute: {
+            Emitter_EmitAst(emitter, ast->Transmute.Expression, constantInitialization);
+        } break;
+
         case AstKind_Declaration: {
-            Emitter_EmitAst(emitter, ast->Declaration.Value);
-            if (ast->Declaration.GlobalOffset) {
-                Emitter_EmitOp(emitter, Op_StoreAbsolute);
-            } else {
-                Emitter_EmitOp(emitter, Op_StoreRelative);
+            if ((ast->Declaration.Constant && constantInitialization) || !ast->Declaration.Constant) {
+                Emitter_EmitAst(emitter, ast->Declaration.Value, constantInitialization);
+                if (ast->Declaration.GlobalOffset) {
+                    Emitter_EmitOp(emitter, Op_StoreAbsolute);
+                } else {
+                    Emitter_EmitOp(emitter, Op_StoreRelative);
+                }
+                Emitter_EmitU64(emitter, ast->Declaration.Offset);
+                Emitter_EmitU64(emitter, ast->Declaration.ResolvedType->Size);
             }
-            Emitter_EmitU64(emitter, ast->Declaration.Offset);
-            Emitter_EmitU64(emitter, ast->Declaration.ResolvedType->Size);
         } break;
 
         case AstKind_Assignment: {
-            Emitter_EmitAst(emitter, ast->Assignment.Value);
+            Emitter_EmitAst(emitter, ast->Assignment.Value, constantInitialization);
             // TODO: Support other types of assignment
             assert(ast->Assignment.Operand->Kind == AstKind_Name);
             if (ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.GlobalOffset) {
@@ -213,25 +223,25 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
         } break;
 
         case AstKind_If: {
-            Emitter_EmitAst(emitter, ast->If.Condition);
+            Emitter_EmitAst(emitter, ast->If.Condition, constantInitialization);
             Emitter_EmitOp(emitter, Op_JumpZero);
             uint64_t jumpFalseLocation = emitter->CodeSize;
             Emitter_EmitU64(emitter, 0);
             Emitter_EmitU64(emitter, 1);
-            Emitter_EmitAst(emitter, ast->If.ThenScope);
+            Emitter_EmitAst(emitter, ast->If.ThenScope, constantInitialization);
             Emitter_EmitOp(emitter, Op_Jump);
             uint64_t jumpEndOfThen = emitter->CodeSize;
             Emitter_EmitU64(emitter, 0);
             *(uint64_t*)&emitter->Code[jumpFalseLocation] = emitter->CodeSize;
             if (ast->If.ElseScope) {
-                Emitter_EmitAst(emitter, ast->If.ElseScope);
+                Emitter_EmitAst(emitter, ast->If.ElseScope, constantInitialization);
             }
             *(uint64_t*)&emitter->Code[jumpEndOfThen] = emitter->CodeSize;
         } break;
 
         case AstKind_Return: {
             if (ast->Return.Value) {
-                Emitter_EmitAst(emitter, ast->Return.Value);
+                Emitter_EmitAst(emitter, ast->Return.Value, constantInitialization);
                 Emitter_EmitOp(emitter, Op_Return);
                 Emitter_EmitU64(emitter, ast->Return.Value->ResolvedType->Size);
             } else {
@@ -242,7 +252,7 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
 
         case AstKind_Print: {
             assert((ast->Print.Value->ResolvedType->Kind == TypeKind_Integer) && (ast->Print.Value->ResolvedType->Size == 8));
-            Emitter_EmitAst(emitter, ast->Print.Value);
+            Emitter_EmitAst(emitter, ast->Print.Value, constantInitialization);
             if (ast->Print.Value->ResolvedType->Integer.Signed) {
                 Emitter_EmitOp(emitter, Op_PrintI64);
             } else {
@@ -251,7 +261,7 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
         } break;
 
         case AstKind_Unary: {
-            Emitter_EmitAst(emitter, ast->Unary.Operand);
+            Emitter_EmitAst(emitter, ast->Unary.Operand, constantInitialization);
             switch (ast->Unary.Operator.Kind) {
                 case TokenKind_Plus: {
                     assert((ast->Unary.Operand->ResolvedType->Kind == TypeKind_Integer) && (ast->Unary.Operand->ResolvedType->Size == 8));
@@ -273,8 +283,8 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
         } break;
 
         case AstKind_Binary: {
-            Emitter_EmitAst(emitter, ast->Binary.Left);
-            Emitter_EmitAst(emitter, ast->Binary.Right);
+            Emitter_EmitAst(emitter, ast->Binary.Left, constantInitialization);
+            Emitter_EmitAst(emitter, ast->Binary.Right, constantInitialization);
             switch (ast->Binary.Operator.Kind) {
                 case TokenKind_EqualsEquals: {
                     Emitter_EmitOp(emitter, Op_Equal);
@@ -366,10 +376,10 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast) {
         } break;
 
         case AstKind_Call: {
-            Emitter_EmitAst(emitter, ast->Call.Operand);
+            Emitter_EmitAst(emitter, ast->Call.Operand, constantInitialization);
             uint64_t argSize = 0;
             for (uint64_t i = 0; i < ast->Call.ArgumentCount; i++) {
-                Emitter_EmitAst(emitter, ast->Call.Arguments[i]);
+                Emitter_EmitAst(emitter, ast->Call.Arguments[i], constantInitialization);
                 argSize += ast->Call.Arguments[i]->ResolvedType->Size;
             }
             Emitter_EmitOp(emitter, Op_Call);

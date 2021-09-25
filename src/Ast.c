@@ -33,6 +33,17 @@ void PrintAst(Ast* ast, uint64_t indent) {
             }
         } break;
 
+        case AstKind_Transmute: {
+            putchar('\n');
+            Indent(indent + 1);
+            printf("Type: ");
+            PrintAst(ast->Transmute.Type, indent + 1);
+            putchar('\n');
+            Indent(indent + 1);
+            printf("Expression: ");
+            PrintAst(ast->Transmute.Expression, indent + 1);
+        } break;
+
         case AstKind_Declaration: {
             putchar('\n');
             Indent(indent + 1);
