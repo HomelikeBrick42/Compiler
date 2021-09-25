@@ -71,6 +71,11 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
             }
         } break;
 
+        case AstKind_While: {
+            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->While.Condition, global);
+            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->While.Scope, global);
+        } break;
+
         case AstKind_Unary: {
             Emitter_FindDeclarationOffsets(emitter, parentScope, ast->Unary.Operand, global);
         } break;
@@ -277,6 +282,19 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
                 Emitter_EmitAst(emitter, ast->If.ElseScope, constantInitialization);
             }
             *(uint64_t*)&emitter->Code[jumpEndOfThen] = emitter->CodeSize;
+        } break;
+
+        case AstKind_While: {
+            uint64_t beginLoop = emitter->CodeSize;
+            Emitter_EmitAst(emitter, ast->While.Condition, constantInitialization);
+            Emitter_EmitOp(emitter, Op_JumpZero);
+            uint64_t jumpFalseLocation = emitter->CodeSize;
+            Emitter_EmitU64(emitter, 0);
+            Emitter_EmitU64(emitter, 1);
+            Emitter_EmitAst(emitter, ast->While.Scope, constantInitialization);
+            Emitter_EmitOp(emitter, Op_Jump);
+            Emitter_EmitU64(emitter, beginLoop);
+            *(uint64_t*)&emitter->Code[jumpFalseLocation] = emitter->CodeSize;
         } break;
 
         case AstKind_Return: {

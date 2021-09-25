@@ -102,6 +102,18 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
             return iff;
         } break;
 
+        case TokenKind_KeywordWhile: {
+            AstWhile* whilee = calloc(1, sizeof(AstWhile));
+            whilee->Kind = AstKind_While;
+
+            Parser_ExpectToken(parser, TokenKind_KeywordWhile);
+
+            whilee->While.Condition = Parser_ParseExpression(parser);
+            whilee->While.Scope = Parser_ParseScope(parser, true);
+
+            return whilee;
+        } break;
+
         case TokenKind_KeywordPrint: {
             AstPrint* print = calloc(1, sizeof(AstPrint));
 

@@ -471,6 +471,28 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
             }
         } break;
 
+        case AstKind_While: {
+            if (parentScope->Scope.Global) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have while statements in global scope\n");
+                return false;
+            }
+
+            if (!ResolveAst(ast->While.Condition, &Type_Bool, parentScope, parentProcedure)) {
+                return false;
+            }
+
+            if (ast->While.Condition->ResolvedType->Kind != TypeKind_Bool) {
+                fflush(stdout);
+                fprintf(stderr, "If statement condition must be a boolean\n");
+                return false;
+            }
+
+            if (!ResolveAst(ast->While.Scope, NULL, parentScope, parentProcedure)) {
+                return false;
+            }
+        } break;
+
         case AstKind_Return: {
             if (parentScope->Scope.Global) {
                 fflush(stdout);

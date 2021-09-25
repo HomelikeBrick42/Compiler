@@ -98,12 +98,23 @@ void PrintAst(Ast* ast, uint64_t indent) {
             Indent(indent + 1);
             printf("Then: ");
             PrintAst(ast->If.ThenScope, indent + 1);
-            if (ast->If.ThenScope) {
+            if (ast->If.ElseScope) {
                 putchar('\n');
                 Indent(indent + 1);
                 printf("Else: ");
                 PrintAst(ast->If.ElseScope, indent + 1);
             }
+        } break;
+
+        case AstKind_While: {
+            putchar('\n');
+            Indent(indent + 1);
+            printf("Condition: ");
+            PrintAst(ast->While.Condition, indent + 1);
+            putchar('\n');
+            Indent(indent + 1);
+            printf("Body: ");
+            PrintAst(ast->While.Scope, indent + 1);
         } break;
 
         case AstKind_Return: {

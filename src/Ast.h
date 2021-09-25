@@ -47,6 +47,11 @@ typedef struct Type Type;
         AstScope* ElseScope;                    \
     })                                          \
                                                 \
+    AST_KIND(While, {                           \
+        AstExpression* Condition;               \
+        AstScope* Scope;                        \
+    })                                          \
+                                                \
     AST_KIND(Return, { AstExpression* Value; }) \
                                                 \
     AST_KIND(Print, { AstExpression* Value; })  \
