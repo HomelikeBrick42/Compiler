@@ -2,14 +2,13 @@ main :: () {
     a := 10;
 
     while a != 0 {
-        print(a);
-
         if a == 5 {
             a = a - 2;
             continue;
-        } else if a == 2 {
+        } else if a == 1 {
             break;
         } else {
+            print(a);
             a = a - 1;
         }
     }
