@@ -386,6 +386,36 @@ static bool AssertTypesEqual(Type* a, Type* b) {
     return true;
 }
 
+static bool BodyReturns(Ast* ast) {
+    switch (ast->Kind) {
+        case AstKind_Scope: {
+            for (uint64_t i = 0; i < ast->Scope.StatementCount; i++) {
+                if (BodyReturns(ast->Scope.Statements[i])) {
+                    return true;
+                }
+            }
+            return false;
+        } break;
+
+        case AstKind_If: {
+            bool returns = BodyReturns(ast->If.ThenScope);
+            if (returns && ast->If.ElseScope) {
+                returns = BodyReturns(ast->If.ElseScope);
+                return returns;
+            }
+            return false;
+        } break;
+
+        case AstKind_Return: {
+            return true;
+        } break;
+
+        default: {
+            return false;
+        } break;
+    }
+}
+
 static AstProcedure** PendingProcedureBodies = NULL;
 static uint64_t PendingProcedureBodyCount    = 0;
 
@@ -420,6 +450,14 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 PendingProcedureBodyCount--;
                 if (!ResolveAst(PendingProcedureBodies[i]->Procedure.Body, NULL, ast, PendingProcedureBodies[i])) {
                     return false;
+                }
+
+                if (PendingProcedureBodies[i]->ResolvedType->Procedure.ReturnType) {
+                    if (!BodyReturns(PendingProcedureBodies[i]->Procedure.Body)) {
+                        fflush(stdout);
+                        fprintf(stderr, "All control paths must return\n");
+                        return false;
+                    }
                 }
             }
         } break;
