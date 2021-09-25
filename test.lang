@@ -1,12 +1,7 @@
-// BUG: Constants are initialized in the order they are declared
-// This will not work
-// a :: b;
-// b :: 5;
-
-do_math :: (n: int, func: (a: int, b: int) -> int) -> int {
-    return func(n, n * n);
-};
-
 main :: () {
-    print do_math(5, (a: int, b: int) -> int { return a + b; });
+    a: int = 5;
+
+    b := cast(uint) a;
+
+    print b;
 };

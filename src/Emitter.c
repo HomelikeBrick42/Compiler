@@ -1,4 +1,5 @@
 #include "Emitter.h"
+#include "Type.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,6 +33,10 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
 
         case AstKind_Transmute: {
             Emitter_FindDeclarationOffsets(emitter, parentScope, ast->Transmute.Expression, global);
+        } break;
+
+        case AstKind_Cast: {
+            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->Cast.Expression, global);
         } break;
 
         case AstKind_Declaration: {
@@ -178,6 +183,23 @@ void Emitter_Emit(Emitter* emitter, Ast* ast) {
     }
 }
 
+struct {
+    Type* From;
+    Type* To;
+    Op Op;
+} CastOps[] = {
+    {
+        .From = &Type_IntegerSigned,
+        .To   = &Type_IntegerUnsigned,
+        .Op   = Op_I64ToU64,
+    },
+    {
+        .From = &Type_IntegerUnsigned,
+        .To   = &Type_IntegerSigned,
+        .Op   = Op_U64ToI64,
+    },
+};
+
 void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
     switch (ast->Kind) {
         case AstKind_Scope: {
@@ -196,6 +218,22 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
 
         case AstKind_Transmute: {
             Emitter_EmitAst(emitter, ast->Transmute.Expression, constantInitialization);
+        } break;
+
+        case AstKind_Cast: {
+            Emitter_EmitAst(emitter, ast->Cast.Expression, constantInitialization);
+            if (!TypesEqual(ast->Cast.Expression->ResolvedType, ast->ResolvedType)) {
+                bool found = true;
+                for (uint64_t i = 0; i < sizeof(CastOps) / sizeof(CastOps[0]); i++) {
+                    if (TypesEqual(CastOps[i].To, ast->ResolvedType) &&
+                        TypesEqual(CastOps[i].From, ast->Cast.Expression->ResolvedType)) {
+                        Emitter_EmitOp(emitter, CastOps[i].Op);
+                        found = true;
+                        break;
+                    }
+                }
+                assert(found);
+            }
         } break;
 
         case AstKind_Declaration: {

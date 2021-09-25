@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Ast.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -47,3 +49,26 @@ struct Type {
 #undef TYPE_KIND
     };
 };
+
+extern const char* Type_TypeName;
+extern Type Type_Type;
+extern AstTypeExpression Type_TypeExpression;
+extern AstDeclaration Type_TypeDeclaration;
+
+extern const char* Type_IntegerSignedName;
+extern Type Type_IntegerSigned;
+extern AstTypeExpression Type_IntegerSignedExpression;
+extern AstDeclaration Type_IntegerSignedDeclaration;
+
+extern const char* Type_IntegerUnsignedName;
+extern Type Type_IntegerUnsigned;
+extern AstTypeExpression Type_IntegerUnsignedExpression;
+extern AstDeclaration Type_IntegerUnsignedDeclaration;
+
+extern const char* Type_BoolName;
+extern Type Type_Bool;
+extern AstTypeExpression Type_BoolExpression;
+extern AstDeclaration Type_BoolDeclaration;
+
+void InitTypes();
+bool TypesEqual(Type* a, Type* b);

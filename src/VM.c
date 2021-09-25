@@ -175,6 +175,22 @@ bool VM_Step(VM* vm) {
             printf("%s\n", value ? "true" : "false");
         } break;
 
+        case Op_I64ToU64: {
+            vm->Sp -= sizeof(int64_t);
+            int64_t value = *(int64_t*)vm->Sp;
+
+            *(uint64_t*)vm->Sp = (uint64_t)value;
+            vm->Sp += sizeof(uint64_t);
+        } break;
+
+        case Op_U64ToI64: {
+            vm->Sp -= sizeof(uint64_t);
+            uint64_t value = *(uint64_t*)vm->Sp;
+
+            *(int64_t*)vm->Sp = (int64_t)value;
+            vm->Sp += sizeof(int64_t);
+        } break;
+
         case Op_Equal: {
             uint64_t size = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);

@@ -24,6 +24,8 @@
     OP(PrintI64)                                                                                                                 \
     OP(PrintU64)                                                                                                                 \
     OP(PrintBool)                                                                                                                \
+    OP(I64ToU64)                                                                                                                 \
+    OP(U64ToI64)                                                                                                                 \
     OP(Equal)                                                                                                                    \
     OP(Jump)                                                                                                                     \
     OP(JumpZero)                                                                                                                 \

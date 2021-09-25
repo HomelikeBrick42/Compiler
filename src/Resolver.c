@@ -5,26 +5,6 @@
 #include <string.h>
 #include <assert.h>
 
-static const char* Type_TypeName             = "type";
-static Type Type_Type                        = {};
-static AstTypeExpression Type_TypeExpression = {};
-static AstDeclaration Type_TypeDeclaration   = {};
-
-static const char* Type_IntegerSignedName             = "int";
-static Type Type_IntegerSigned                        = {};
-static AstTypeExpression Type_IntegerSignedExpression = {};
-static AstDeclaration Type_IntegerSignedDeclaration   = {};
-
-static const char* Type_IntegerUnsignedName             = "uint";
-static Type Type_IntegerUnsigned                        = {};
-static AstTypeExpression Type_IntegerUnsignedExpression = {};
-static AstDeclaration Type_IntegerUnsignedDeclaration   = {};
-
-static const char* Type_BoolName             = "bool";
-static Type Type_Bool                        = {};
-static AstTypeExpression Type_BoolExpression = {};
-static AstDeclaration Type_BoolDeclaration   = {};
-
 struct {
     const char* Name;
     AstDeclaration* Declaration;
@@ -173,102 +153,19 @@ static struct {
     },
 };
 
-void InitTypes() {
-    Type_Type.Kind = TypeKind_Type;
-    Type_Type.Size = 8;
-
-    Type_TypeExpression.Kind                = AstKind_TypeExpression;
-    Type_TypeExpression.Resolution          = Resolution_Resolved;
-    Type_TypeExpression.ResolvedType        = &Type_Type;
-    Type_TypeExpression.TypeExpression.Type = &Type_Type;
-
-    Type_TypeDeclaration.Kind             = AstKind_Declaration;
-    Type_TypeDeclaration.Resolution       = Resolution_Resolved;
-    Type_TypeDeclaration.Declaration.Name = (Token){
-        .Kind     = TokenKind_Identifier,
-        .FilePath = "Builtin",
-        .Source   = Type_TypeName,
-        .Position = 0,
-        .Line     = 1,
-        .Column   = 1,
-        .Length   = strlen(Type_TypeName),
-    };
-    Type_TypeDeclaration.Declaration.ResolvedType = &Type_Type;
-    Type_TypeDeclaration.Declaration.Value        = &Type_TypeExpression;
-    Type_TypeDeclaration.Declaration.Constant     = true;
-
-    Type_IntegerSigned.Kind           = TypeKind_Integer;
-    Type_IntegerSigned.Size           = 8;
-    Type_IntegerSigned.Integer.Signed = true;
-
-    Type_IntegerSignedExpression.Kind                = AstKind_TypeExpression;
-    Type_IntegerSignedExpression.Resolution          = Resolution_Resolved;
-    Type_IntegerSignedExpression.ResolvedType        = &Type_Type;
-    Type_IntegerSignedExpression.TypeExpression.Type = &Type_IntegerSigned;
-
-    Type_IntegerSignedDeclaration.Kind             = AstKind_Declaration;
-    Type_IntegerSignedDeclaration.Resolution       = Resolution_Resolved;
-    Type_IntegerSignedDeclaration.Declaration.Name = (Token){
-        .Kind     = TokenKind_Identifier,
-        .FilePath = "Builtin",
-        .Source   = Type_IntegerSignedName,
-        .Position = 0,
-        .Line     = 1,
-        .Column   = 1,
-        .Length   = strlen(Type_IntegerSignedName),
-    };
-    Type_IntegerSignedDeclaration.Declaration.ResolvedType = &Type_Type;
-    Type_IntegerSignedDeclaration.Declaration.Value        = &Type_IntegerSignedExpression;
-    Type_IntegerSignedDeclaration.Declaration.Constant     = true;
-
-    Type_IntegerUnsigned.Kind           = TypeKind_Integer;
-    Type_IntegerUnsigned.Size           = 8;
-    Type_IntegerUnsigned.Integer.Signed = false;
-
-    Type_IntegerUnsignedExpression.Kind                = AstKind_TypeExpression;
-    Type_IntegerUnsignedExpression.Resolution          = Resolution_Resolved;
-    Type_IntegerUnsignedExpression.ResolvedType        = &Type_Type;
-    Type_IntegerUnsignedExpression.TypeExpression.Type = &Type_IntegerUnsigned;
-
-    Type_IntegerUnsignedDeclaration.Kind             = AstKind_Declaration;
-    Type_IntegerUnsignedDeclaration.Resolution       = Resolution_Resolved;
-    Type_IntegerUnsignedDeclaration.Declaration.Name = (Token){
-        .Kind     = TokenKind_Identifier,
-        .FilePath = "Builtin",
-        .Source   = Type_IntegerUnsignedName,
-        .Position = 0,
-        .Line     = 1,
-        .Column   = 1,
-        .Length   = strlen(Type_IntegerUnsignedName),
-    };
-    Type_IntegerUnsignedDeclaration.Declaration.ResolvedType = &Type_Type;
-    Type_IntegerUnsignedDeclaration.Declaration.Value        = &Type_IntegerUnsignedExpression;
-    Type_IntegerUnsignedDeclaration.Declaration.Constant     = true;
-
-    Type_Bool.Kind           = TypeKind_Bool;
-    Type_Bool.Size           = 1;
-    Type_Bool.Integer.Signed = true;
-
-    Type_BoolExpression.Kind                = AstKind_TypeExpression;
-    Type_BoolExpression.Resolution          = Resolution_Resolved;
-    Type_BoolExpression.ResolvedType        = &Type_Type;
-    Type_BoolExpression.TypeExpression.Type = &Type_Bool;
-
-    Type_BoolDeclaration.Kind             = AstKind_Declaration;
-    Type_BoolDeclaration.Resolution       = Resolution_Resolved;
-    Type_BoolDeclaration.Declaration.Name = (Token){
-        .Kind     = TokenKind_Identifier,
-        .FilePath = "Builtin",
-        .Source   = Type_BoolName,
-        .Position = 0,
-        .Line     = 1,
-        .Column   = 1,
-        .Length   = strlen(Type_BoolName),
-    };
-    Type_BoolDeclaration.Declaration.ResolvedType = &Type_Type;
-    Type_BoolDeclaration.Declaration.Value        = &Type_BoolExpression;
-    Type_BoolDeclaration.Declaration.Constant     = true;
-}
+struct {
+    Type* From;
+    Type* To;
+} CastableTypes[] = {
+    {
+        .From = &Type_IntegerSigned,
+        .To   = &Type_IntegerUnsigned,
+    },
+    {
+        .From = &Type_IntegerUnsigned,
+        .To   = &Type_IntegerSigned,
+    },
+};
 
 static Type* ExpressionToType(AstExpression* expression) {
     if (expression->Resolution != Resolution_Resolved) {
@@ -334,44 +231,6 @@ static Type* ExpressionToType(AstExpression* expression) {
             fflush(stdout);
             fprintf(stderr, "Expression '%s' is not convertable a type\n", AstKind_Names[expression->Kind]);
             return NULL;
-        } break;
-    }
-}
-
-static bool TypesEqual(Type* a, Type* b) {
-    if (a == b) {
-        return true;
-    }
-
-    if (a->Kind != b->Kind) {
-        return false;
-    }
-
-    switch (a->Kind) {
-        case TypeKind_Type:
-        case TypeKind_Float:
-        case TypeKind_Bool:
-            return true;
-
-        case TypeKind_Integer:
-            return a->Integer.Signed == b->Integer.Signed;
-
-        case TypeKind_Procedure: {
-            if (!TypesEqual(a->Procedure.ReturnType, b->Procedure.ReturnType)) {
-                return false;
-            }
-
-            if (a->Procedure.ParameterTypeCount != b->Procedure.ParameterTypeCount) {
-                return false;
-            }
-
-            for (uint64_t i = 0; i < a->Procedure.ParameterTypeCount; i++) {
-                if (!TypesEqual(a->Procedure.ParameterTypes[i], b->Procedure.ParameterTypes[i])) {
-                    return false;
-                }
-            }
-
-            return true;
         } break;
     }
 }
@@ -480,6 +339,41 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 fflush(stdout);
                 fprintf(stderr, "Can only transmute to types of the same size\n");
                 return false;
+            }
+        } break;
+
+        case AstKind_Cast: {
+            if (!ResolveAst(ast->Cast.Type, &Type_Type, parentScope, parentProcedure)) {
+                return false;
+            }
+
+            ast->ResolvedType = ExpressionToType(ast->Cast.Type);
+            if (!ast->ResolvedType) {
+                return false;
+            }
+
+            if (!ResolveAst(ast->Cast.Expression, ast->ResolvedType, parentScope, parentProcedure)) {
+                return false;
+            }
+
+            if (!TypesEqual(ast->Cast.Expression->ResolvedType, ast->ResolvedType)) {
+                bool found = false;
+                for (uint64_t i = 0; i < sizeof(CastableTypes) / sizeof(CastableTypes[0]); i++) {
+                    if (TypesEqual(CastableTypes[i].To, ast->ResolvedType) &&
+                        TypesEqual(CastableTypes[i].From, ast->Cast.Expression->ResolvedType)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    fflush(stdout);
+                    fprintf(stderr,
+                            "Cannot cast '%s' to '%s'\n",
+                            TypeKind_Names[ast->ResolvedType->Kind],
+                            TypeKind_Names[ast->Cast.Expression->ResolvedType->Kind]);
+                    return false;
+                }
             }
         } break;
 

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Token.h"
-#include "Type.h"
+
+typedef struct Type Type;
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -64,6 +65,11 @@
     })                                          \
                                                 \
     AST_KIND(Transmute, {                       \
+        AstExpression* Type;                    \
+        AstExpression* Expression;              \
+    })                                          \
+                                                \
+    AST_KIND(Cast, {                            \
         AstExpression* Type;                    \
         AstExpression* Expression;              \
     })                                          \

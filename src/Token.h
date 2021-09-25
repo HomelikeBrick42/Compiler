@@ -17,6 +17,7 @@
     TOKEN_KIND(KeywordReturn, "return")       \
     TOKEN_KIND(KeywordPrint, "print")         \
     TOKEN_KIND(KeywordTransmute, "transmute") \
+    TOKEN_KIND(KeywordCast, "cast")           \
     TOKEN_KIND(KeywordEnd, "")                \
                                               \
     TOKEN_KIND(Semicolon, ";")                \

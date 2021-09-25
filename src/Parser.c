@@ -222,14 +222,14 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
         case TokenKind_KeywordTrue: {
             Parser_ExpectToken(parser, TokenKind_KeywordTrue);
             AstTrue* truee = calloc(1, sizeof(AstTrue));
-            truee->Kind    = AstKind_True;
+            truee->Kind = AstKind_True;
             return truee;
         } break;
 
         case TokenKind_KeywordFalse: {
             Parser_ExpectToken(parser, TokenKind_KeywordFalse);
             AstFalse* falsee = calloc(1, sizeof(AstFalse));
-            falsee->Kind     = AstKind_False;
+            falsee->Kind = AstKind_False;
             return falsee;
         } break;
 
@@ -319,6 +319,7 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
 uint64_t Parser_GetUnaryOperatorPrecedence(TokenKind kind) {
     switch (kind) {
         case TokenKind_KeywordTransmute:
+        case TokenKind_KeywordCast:
             return 5;
 
         case TokenKind_Plus:
@@ -359,14 +360,26 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
             Parser_ExpectToken(parser, TokenKind_KeywordTransmute);
 
             AstTransmute* transmute = calloc(1, sizeof(AstTransmute));
-            transmute->Kind         = AstKind_Transmute;
+            transmute->Kind = AstKind_Transmute;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
             transmute->Transmute.Type = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
             transmute->Transmute.Expression = Parser_ParseBinaryExpression(parser, unaryPrecedence);
-            left                            = transmute;
+            left = transmute;
+        } else if (parser->Current.Kind == TokenKind_KeywordCast) {
+            Parser_ExpectToken(parser, TokenKind_KeywordCast);
+
+            AstCast* cast = calloc(1, sizeof(AstCast));
+            cast->Kind = AstKind_Cast;
+
+            Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
+            cast->Cast.Type = Parser_ParseExpression(parser);
+            Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
+
+            cast->Cast.Expression = Parser_ParseBinaryExpression(parser, unaryPrecedence);
+            left = cast;
         } else {
             AstUnary* unary = calloc(1, sizeof(AstUnary));
             unary->Kind     = AstKind_Unary;
