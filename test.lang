@@ -7,7 +7,7 @@ main :: () {
         if a == 5 {
             a = a - 2;
             continue;
-        } else if (a == 2) {
+        } else if a == 2 {
             break;
         } else {
             a = a - 1;
