@@ -89,7 +89,9 @@ bool VM_Step(VM* vm) {
             uint64_t size = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);
 
-            vm->Sp += size;
+            for (uint64_t i = 0; i < size; i++) {
+                *vm->Sp++ = 0;
+            }
         } break;
 
         case Op_Pop: {
@@ -132,6 +134,10 @@ bool VM_Step(VM* vm) {
 
 #undef MATH_OP
 
+        case Op_NegateBool: {
+            vm->Sp[-1] = !vm->Sp[-1];
+        } break;
+
         case Op_NegateI64: {
             vm->Sp -= sizeof(int64_t);
             int64_t value = *(int64_t*)vm->Sp;
@@ -160,6 +166,13 @@ bool VM_Step(VM* vm) {
             uint64_t value = *(uint64_t*)vm->Sp;
 
             printf("%llu\n", value);
+        } break;
+
+        case Op_PrintBool: {
+            vm->Sp -= sizeof(uint8_t);
+            uint8_t value = *(uint8_t*)vm->Sp;
+
+            printf("%s\n", value ? "true" : "false");
         } break;
 
         case Op_Equal: {

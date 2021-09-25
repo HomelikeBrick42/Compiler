@@ -4,15 +4,17 @@
 // b :: 5;
 
 main :: () {
-    test: uint = 5 + 5;
-    print test;
-
     a: uint = 6;
     b := factorial(a);
     print b;
     c := b;
     c = c - a;
     print c;
+
+    boolean := true;
+    print boolean;
+    print !boolean;
+    print !!!boolean;
 
     func := (a: int, b: int) -> int {
         return a + b;

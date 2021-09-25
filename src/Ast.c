@@ -181,6 +181,8 @@ void PrintAst(Ast* ast, uint64_t indent) {
             }
         } break;
 
+        case AstKind_True:
+        case AstKind_False:
         case AstKind_TypeExpression:
             break;
     }

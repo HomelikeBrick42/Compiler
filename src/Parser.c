@@ -219,6 +219,20 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
             return name;
         } break;
 
+        case TokenKind_KeywordTrue: {
+            Parser_ExpectToken(parser, TokenKind_KeywordTrue);
+            AstTrue* truee = calloc(1, sizeof(AstTrue));
+            truee->Kind = AstKind_True;
+            return truee;
+        } break;
+
+        case TokenKind_KeywordFalse: {
+            Parser_ExpectToken(parser, TokenKind_KeywordFalse);
+            AstFalse* falsee = calloc(1, sizeof(AstFalse));
+            falsee->Kind = AstKind_False;
+            return falsee;
+        } break;
+
         case TokenKind_OpenParenthesis: {
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
 

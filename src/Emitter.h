@@ -31,3 +31,4 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization);
 void Emitter_EmitOp(Emitter* emitter, Op op);
 void Emitter_EmitI64(Emitter* emitter, int64_t value);
 void Emitter_EmitU64(Emitter* emitter, uint64_t value);
+void Emitter_EmitU8(Emitter* emitter, uint8_t value);

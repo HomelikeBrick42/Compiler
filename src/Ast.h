@@ -70,6 +70,8 @@
                                                 \
     AST_KIND(Integer, { Token Token; })         \
     /* AST_KIND(Float, { Token Token; }) */     \
+    AST_KIND(True, {})                          \
+    AST_KIND(False, {})                         \
                                                 \
     AST_KIND(TypeExpression, { Type* Type; })   \
                                                 \

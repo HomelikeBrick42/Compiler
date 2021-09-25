@@ -568,7 +568,8 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (ast->Print.Value->ResolvedType->Kind != TypeKind_Integer) {
+            if (ast->Print.Value->ResolvedType->Kind != TypeKind_Integer &&
+                ast->Print.Value->ResolvedType->Kind != TypeKind_Bool) {
                 fflush(stdout);
                 fprintf(stderr, "Type '%s' is not printable\n", TypeKind_Names[ast->Return.Value->ResolvedType->Kind]);
                 return false;
@@ -819,6 +820,11 @@ Exit:
             }
 
             ast->ResolvedType = type->Procedure.ReturnType;
+        } break;
+
+        case AstKind_True:
+        case AstKind_False: {
+            ast->ResolvedType = &Type_Bool;
         } break;
 
         case AstKind_TypeExpression: {

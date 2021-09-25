@@ -107,6 +107,8 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
             }
         } break;
 
+        case AstKind_True:
+        case AstKind_False:
         case AstKind_Name:
         case AstKind_Integer:
         case AstKind_TypeExpression: {
@@ -251,12 +253,19 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
         } break;
 
         case AstKind_Print: {
-            assert((ast->Print.Value->ResolvedType->Kind == TypeKind_Integer) && (ast->Print.Value->ResolvedType->Size == 8));
             Emitter_EmitAst(emitter, ast->Print.Value, constantInitialization);
-            if (ast->Print.Value->ResolvedType->Integer.Signed) {
-                Emitter_EmitOp(emitter, Op_PrintI64);
+            if (ast->Print.Value->ResolvedType->Kind == TypeKind_Integer) {
+                assert(ast->Print.Value->ResolvedType->Size == 8);
+                if (ast->Print.Value->ResolvedType->Integer.Signed) {
+                    Emitter_EmitOp(emitter, Op_PrintI64);
+                } else {
+                    Emitter_EmitOp(emitter, Op_PrintU64);
+                }
+            } else if (ast->Print.Value->ResolvedType->Kind == TypeKind_Bool) {
+                assert(ast->Print.Value->ResolvedType->Size == 1);
+                Emitter_EmitOp(emitter, Op_PrintBool);
             } else {
-                Emitter_EmitOp(emitter, Op_PrintU64);
+                assert(false);
             }
         } break;
 
@@ -264,16 +273,24 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
             Emitter_EmitAst(emitter, ast->Unary.Operand, constantInitialization);
             switch (ast->Unary.Operator.Kind) {
                 case TokenKind_Plus: {
-                    assert((ast->Unary.Operand->ResolvedType->Kind == TypeKind_Integer) && (ast->Unary.Operand->ResolvedType->Size == 8));
+                    assert((ast->Unary.Operand->ResolvedType->Kind == TypeKind_Integer) &&
+                           (ast->Unary.Operand->ResolvedType->Size == 8));
                 } break;
 
                 case TokenKind_Minus: {
-                    assert((ast->Unary.Operand->ResolvedType->Kind == TypeKind_Integer) && (ast->Unary.Operand->ResolvedType->Size == 8));
+                    assert((ast->Unary.Operand->ResolvedType->Kind == TypeKind_Integer) &&
+                           (ast->Unary.Operand->ResolvedType->Size == 8));
                     if (ast->Unary.Operand->ResolvedType->Integer.Signed) {
                         Emitter_EmitOp(emitter, Op_NegateI64);
                     } else {
                         Emitter_EmitOp(emitter, Op_NegateU64);
                     }
+                } break;
+
+                case TokenKind_Bang: {
+                    assert((ast->Unary.Operand->ResolvedType->Kind == TypeKind_Bool) &&
+                           (ast->Unary.Operand->ResolvedType->Size == 1));
+                    Emitter_EmitOp(emitter, Op_NegateBool);
                 } break;
 
                 default: {
@@ -291,8 +308,15 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
                     Emitter_EmitU64(emitter, ast->Binary.Left->ResolvedType->Size);
                 } break;
 
+                case TokenKind_BangEquals: {
+                    Emitter_EmitOp(emitter, Op_Equal);
+                    Emitter_EmitU64(emitter, ast->Binary.Left->ResolvedType->Size);
+                    Emitter_EmitOp(emitter, Op_NegateBool);
+                } break;
+
                 case TokenKind_Plus: {
-                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) && (ast->Binary.Left->ResolvedType->Size == 8));
+                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) &&
+                           (ast->Binary.Left->ResolvedType->Size == 8));
                     if (ast->Binary.Left->ResolvedType->Integer.Signed) {
                         Emitter_EmitOp(emitter, Op_AddI64);
                     } else {
@@ -301,7 +325,8 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
                 } break;
 
                 case TokenKind_Minus: {
-                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) && (ast->Binary.Left->ResolvedType->Size == 8));
+                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) &&
+                           (ast->Binary.Left->ResolvedType->Size == 8));
                     if (ast->Binary.Left->ResolvedType->Integer.Signed) {
                         Emitter_EmitOp(emitter, Op_SubI64);
                     } else {
@@ -310,7 +335,8 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
                 } break;
 
                 case TokenKind_Asterisk: {
-                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) && (ast->Binary.Left->ResolvedType->Size == 8));
+                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) &&
+                           (ast->Binary.Left->ResolvedType->Size == 8));
                     if (ast->Binary.Left->ResolvedType->Integer.Signed) {
                         Emitter_EmitOp(emitter, Op_MulI64);
                     } else {
@@ -319,7 +345,8 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
                 } break;
 
                 case TokenKind_Slash: {
-                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) && (ast->Binary.Left->ResolvedType->Size == 8));
+                    assert((ast->Binary.Left->ResolvedType->Kind == TypeKind_Integer) &&
+                           (ast->Binary.Left->ResolvedType->Size == 8));
                     if (ast->Binary.Left->ResolvedType->Integer.Signed) {
                         Emitter_EmitOp(emitter, Op_DivI64);
                     } else {
@@ -385,6 +412,18 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
             Emitter_EmitOp(emitter, Op_Call);
             Emitter_EmitU64(emitter, argSize);
         } break;
+
+        case AstKind_True: {
+            Emitter_EmitOp(emitter, Op_Push);
+            Emitter_EmitU64(emitter, 1);
+            Emitter_EmitU8(emitter, 1);
+        } break;
+
+        case AstKind_False: {
+            Emitter_EmitOp(emitter, Op_Push);
+            Emitter_EmitU64(emitter, 1);
+            Emitter_EmitU8(emitter, 0);
+        } break;
     }
 }
 
@@ -404,4 +443,10 @@ void Emitter_EmitU64(Emitter* emitter, uint64_t value) {
     emitter->Code                                 = realloc(emitter->Code, emitter->CodeSize + sizeof(uint64_t));
     *(uint64_t*)&emitter->Code[emitter->CodeSize] = value;
     emitter->CodeSize += sizeof(uint64_t);
+}
+
+void Emitter_EmitU8(Emitter* emitter, uint8_t value) {
+    emitter->Code                                = realloc(emitter->Code, emitter->CodeSize + sizeof(uint8_t));
+    *(uint8_t*)&emitter->Code[emitter->CodeSize] = value;
+    emitter->CodeSize += sizeof(uint8_t);
 }
