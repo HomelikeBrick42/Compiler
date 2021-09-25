@@ -1,15 +1,16 @@
 main :: () {
-    a := 11;
+    a := 10;
 
-    while a != 0 {
-        a = a - 1;
+    while a != -1 {
+        print a;
 
         if (a == 5) {
+            a = a - 2;
             continue;
         } else if (a == 2) {
             break;
+        } else {
+            a = a - 1;
         }
-
-        print a;
     }
 };
