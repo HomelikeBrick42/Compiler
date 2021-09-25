@@ -3,36 +3,10 @@
 // a :: b;
 // b :: 5;
 
-main :: () {
-    a: uint = 6;
-    b := factorial(a);
-    print b;
-    c := b;
-    c = c - a;
-    print c;
-
-    boolean := true;
-    print boolean;
-    print !boolean;
-    print !!!boolean;
-
-    func := (a: int, b: int) -> int {
-        return a + b;
-    };
-
-    print func(7, -5);
-
-    func = (a: int, b: int) -> int {
-        return a * b;
-    };
-
-    print func(7, -5);
+do_math :: (n: int, func: (a: int, b: int) -> int) -> int {
+    return func(n, n * n);
 };
 
-factorial :: (n: uint) -> uint {
-    if n == 1 {
-        return 1;
-    } else {
-        return n * factorial(n - 1);
-    }
+main :: () {
+    print do_math(5, (a: int, b: int) -> int { return a + b; });
 };

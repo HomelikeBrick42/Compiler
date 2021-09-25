@@ -288,7 +288,7 @@ static Type* ExpressionToType(AstExpression* expression) {
 
             TypeProcedure* type = calloc(1, sizeof(TypeProcedure));
             type->Kind          = TypeKind_Procedure;
-            type->Size          = 64;
+            type->Size          = 8;
 
             if (procedure->ParameterCount > 0) {
                 type->Procedure.ParameterTypeCount = procedure->ParameterCount;

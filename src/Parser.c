@@ -222,14 +222,14 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
         case TokenKind_KeywordTrue: {
             Parser_ExpectToken(parser, TokenKind_KeywordTrue);
             AstTrue* truee = calloc(1, sizeof(AstTrue));
-            truee->Kind = AstKind_True;
+            truee->Kind    = AstKind_True;
             return truee;
         } break;
 
         case TokenKind_KeywordFalse: {
             Parser_ExpectToken(parser, TokenKind_KeywordFalse);
             AstFalse* falsee = calloc(1, sizeof(AstFalse));
-            falsee->Kind = AstKind_False;
+            falsee->Kind     = AstKind_False;
             return falsee;
         } break;
 
@@ -359,14 +359,14 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
             Parser_ExpectToken(parser, TokenKind_KeywordTransmute);
 
             AstTransmute* transmute = calloc(1, sizeof(AstTransmute));
-            transmute->Kind = AstKind_Transmute;
+            transmute->Kind         = AstKind_Transmute;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
             transmute->Transmute.Type = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
             transmute->Transmute.Expression = Parser_ParseBinaryExpression(parser, unaryPrecedence);
-            left = transmute;
+            left                            = transmute;
         } else {
             AstUnary* unary = calloc(1, sizeof(AstUnary));
             unary->Kind     = AstKind_Unary;
@@ -381,7 +381,7 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
     }
 
     while (true) {
-        while (parser->Current.Kind == TokenKind_OpenParenthesis) {
+        if (parser->Current.Kind == TokenKind_OpenParenthesis) {
             AstCall* call      = calloc(1, sizeof(AstCall));
             call->Kind         = AstKind_Call;
             call->Call.Operand = left;
@@ -400,21 +400,21 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
             left = call;
+        } else {
+            uint64_t binaryPrecedence = Parser_GetBinaryOperatorPrecedence(parser->Current.Kind);
+            if (binaryPrecedence <= parentPrecedence) {
+                break;
+            }
+
+            AstBinary* binary = calloc(1, sizeof(AstBinary));
+            binary->Kind      = AstKind_Binary;
+
+            binary->Binary.Left     = left;
+            binary->Binary.Operator = Parser_NextToken(parser);
+            binary->Binary.Right    = Parser_ParseBinaryExpression(parser, binaryPrecedence);
+
+            left = binary;
         }
-
-        uint64_t binaryPrecedence = Parser_GetBinaryOperatorPrecedence(parser->Current.Kind);
-        if (binaryPrecedence <= parentPrecedence) {
-            break;
-        }
-
-        AstBinary* binary = calloc(1, sizeof(AstBinary));
-        binary->Kind      = AstKind_Binary;
-
-        binary->Binary.Left     = left;
-        binary->Binary.Operator = Parser_NextToken(parser);
-        binary->Binary.Right    = Parser_ParseBinaryExpression(parser, binaryPrecedence);
-
-        left = binary;
     }
 
     return left;
