@@ -2,6 +2,7 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "Resolver.h"
+#include "Emitter.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@ bool VM_Test();
 bool Lexer_Test();
 bool Parser_Test();
 bool Resolver_Test();
+bool Emitter_Test();
 
 int main(int argc, char** argv) {
     InitTypes();
@@ -34,8 +36,14 @@ int main(int argc, char** argv) {
     }
 #endif
 
-#if 1
+#if 0
     if (!Resolver_Test()) {
+        return EXIT_FAILURE;
+    }
+#endif
+
+#if 1
+    if (!Emitter_Test()) {
         return EXIT_FAILURE;
     }
 #endif
@@ -216,6 +224,53 @@ bool Resolver_Test() {
     if (success) {
         success = ResolveAst(file, NULL, NULL);
     }
+
+    Parser_Destroy(&parser);
+
+    return success;
+}
+
+bool Emitter_Test() {
+    Parser parser;
+    if (!Parser_Create(&parser, "./test.lang")) {
+        return false;
+    }
+
+    AstScope* file = Parser_ParseFile(&parser);
+
+    bool success = !parser.WasError && !parser.Lexer.WasError;
+    if (!success) {
+        return false;
+    }
+
+    success = ResolveAst(file, NULL, NULL);
+    if (!success) {
+        return false;
+    }
+
+    Emitter emitter;
+    if (!Emitter_Create(&emitter)) {
+        return false;
+    }
+
+    Emitter_Emit(&emitter, file);
+
+    PrintBytecode(emitter.Code, emitter.CodeSize);
+
+    VM vm;
+    if (!VM_Create(&vm, emitter.Code, emitter.CodeSize, 1024 * 1024)) {
+        return false;
+    }
+
+    while (true) {
+        if (!VM_Step(&vm)) {
+            break;
+        }
+    }
+
+    VM_Destroy(&vm);
+
+    Emitter_Destroy(&emitter);
 
     Parser_Destroy(&parser);
 

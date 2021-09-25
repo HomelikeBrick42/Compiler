@@ -59,8 +59,9 @@ Token Parser_ExpectToken(Parser* parser, TokenKind expected) {
 }
 
 AstScope* Parser_ParseFile(Parser* parser) {
-    AstScope* scope = calloc(1, sizeof(AstScope));
-    scope->Kind     = AstKind_Scope;
+    AstScope* scope     = calloc(1, sizeof(AstScope));
+    scope->Kind         = AstKind_Scope;
+    scope->Scope.Global = true;
 
     parser->ParentScope = scope;
 
@@ -92,10 +93,10 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
             Parser_ExpectToken(parser, TokenKind_KeywordIf);
 
             iff->If.Condition = Parser_ParseExpression(parser);
-            iff->If.ThenScope = Parser_ParseScope(parser);
+            iff->If.ThenScope = Parser_ParseScope(parser, true);
             if (parser->Current.Kind == TokenKind_KeywordElse) {
                 Parser_ExpectToken(parser, TokenKind_KeywordElse);
-                iff->If.ElseScope = Parser_ParseScope(parser);
+                iff->If.ElseScope = Parser_ParseScope(parser, true);
             }
 
             return iff;
@@ -117,7 +118,9 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
             ret->Kind      = AstKind_Return;
 
             Parser_ExpectToken(parser, TokenKind_KeywordReturn);
-            ret->Return.Value = Parser_ParseExpression(parser);
+            if (parser->Current.Kind != TokenKind_Semicolon) {
+                ret->Return.Value = Parser_ParseExpression(parser);
+            }
             Parser_ExpectToken(parser, TokenKind_Semicolon);
 
             return ret;
@@ -147,10 +150,11 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
     }
 }
 
-AstScope* Parser_ParseScope(Parser* parser) {
+AstScope* Parser_ParseScope(Parser* parser, bool nested) {
     AstScope* scope          = calloc(1, sizeof(AstScope));
     scope->Kind              = AstKind_Scope;
     scope->Scope.ParentScope = parser->ParentScope;
+    scope->Scope.Nested      = nested;
 
     parser->ParentScope = scope;
 
@@ -232,7 +236,7 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
                 if (parser->Current.Kind == TokenKind_OpenBrace) {
                     AstScope* parentScope     = parser->ParentScope;
                     parser->ParentScope       = parser->ParentFileScope;
-                    procedure->Procedure.Body = Parser_ParseScope(parser);
+                    procedure->Procedure.Body = Parser_ParseScope(parser, false);
                     parser->ParentScope       = parentScope;
                 }
 
@@ -273,7 +277,7 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
                 if (parser->Current.Kind == TokenKind_OpenBrace) {
                     AstScope* parentScope     = parser->ParentScope;
                     parser->ParentScope       = parser->ParentFileScope;
-                    procedure->Procedure.Body = Parser_ParseScope(parser);
+                    procedure->Procedure.Body = Parser_ParseScope(parser, false);
                     parser->ParentScope       = parentScope;
                 }
 
@@ -346,7 +350,7 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
     }
 
     while (true) {
-        if (parser->Current.Kind == TokenKind_OpenParenthesis) {
+        while (parser->Current.Kind == TokenKind_OpenParenthesis) {
             AstCall* call      = calloc(1, sizeof(AstCall));
             call->Kind         = AstKind_Call;
             call->Call.Operand = left;

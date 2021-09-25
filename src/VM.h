@@ -7,6 +7,7 @@
     OP(Invalid)                                                                                                                  \
     OP(Exit)                                                                                                                     \
     OP(Push)                                                                                                                     \
+    OP(AllocStack)                                                                                                               \
     OP(Pop)                                                                                                                      \
     OP(Dup)                                                                                                                      \
     OP(AddI64)                                                                                                                   \
@@ -17,6 +18,8 @@
     OP(MulU64)                                                                                                                   \
     OP(DivI64)                                                                                                                   \
     OP(DivU64)                                                                                                                   \
+    OP(NegateI64)                                                                                                                   \
+    OP(NegateU64)                                                                                                                   \
     OP(PrintI64)                                                                                                                 \
     OP(PrintU64)                                                                                                                 \
     OP(Equal)                                                                                                                    \

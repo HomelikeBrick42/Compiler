@@ -15,6 +15,9 @@
         uint64_t DeclarationCount;              \
         AstStatement** Statements;              \
         uint64_t StatementCount;                \
+        uint64_t DeclarationOffset;             \
+        bool Global;                            \
+        bool Nested;                            \
     })                                          \
                                                 \
     AST_KIND(Declaration, {                     \
@@ -24,7 +27,11 @@
         Token EqualsToken;                      \
         AstExpression* Value;                   \
         bool Constant;                          \
+        /* Used for the resolver */             \
         bool IsProcedureParam;                  \
+        /* Used for the emitter */              \
+        bool GlobalOffset;                      \
+        uint64_t Offset;                        \
     })                                          \
                                                 \
     AST_KIND(Assignment, {                      \

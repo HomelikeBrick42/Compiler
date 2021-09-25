@@ -22,14 +22,18 @@ add_executable(
         Compiler
         src/Ast.c
         src/Ast.h
+        src/Emitter.c
+        src/Emitter.h
         src/Lexer.c
         src/Lexer.h
         src/Main.c
         src/Parser.c
         src/Parser.h
+        src/Resolver.c
+        src/Resolver.h
         src/Token.c
         src/Token.h
         src/Type.c
         src/Type.h
         src/VM.c
-        src/VM.h src/Resolver.h src/Resolver.c)
+        src/VM.h)

@@ -38,17 +38,29 @@ void VM_Destroy(VM* vm) {
 
 bool VM_Step(VM* vm) {
     if (vm->Ip - vm->Code < 0 || (uint64_t)(vm->Ip - vm->Code) >= vm->CodeSize) {
-        fprintf(stderr, "Instruction out of range\n");
+        fprintf(stderr,
+                "Instruction out of range Sp: %lld Bp: %lld Ip: %lld\n",
+                vm->Sp - vm->Stack,
+                vm->Bp - vm->Stack,
+                vm->Ip - vm->Code);
         return false;
     }
 
     if (vm->Sp - vm->Stack < 0 || (uint64_t)(vm->Sp - vm->Stack) >= vm->StackSize) {
-        fprintf(stderr, "Stack pointer out of range\n");
+        fprintf(stderr,
+                "Stack pointer out of range Sp: %lld Bp: %lld Ip: %lld\n",
+                vm->Sp - vm->Stack,
+                vm->Bp - vm->Stack,
+                vm->Ip - vm->Code);
         return false;
     }
 
     if (vm->Bp - vm->Stack < 0 || (uint64_t)(vm->Bp - vm->Stack) >= vm->StackSize) {
-        fprintf(stderr, "Base stack pointer out of range\n");
+        fprintf(stderr,
+                "Base stack pointer out of range Sp: %lld Bp: %lld Ip: %lld\n",
+                vm->Sp - vm->Stack,
+                vm->Bp - vm->Stack,
+                vm->Ip - vm->Code);
         return false;
     }
 
@@ -71,6 +83,13 @@ bool VM_Step(VM* vm) {
             for (uint64_t i = 0; i < size; i++) {
                 *vm->Sp++ = *vm->Ip++;
             }
+        } break;
+
+        case Op_AllocStack: {
+            uint64_t size = *(uint64_t*)vm->Ip;
+            vm->Ip += sizeof(uint64_t);
+
+            vm->Sp += size;
         } break;
 
         case Op_Pop: {
@@ -112,6 +131,22 @@ bool VM_Step(VM* vm) {
             MATH_OP(Op_DivU64, uint64_t, /);
 
 #undef MATH_OP
+
+        case Op_NegateI64: {
+            vm->Sp -= sizeof(int64_t);
+            int64_t value = *(int64_t*)vm->Sp;
+
+            *(int64_t*)vm->Sp = -value;
+            vm->Sp += sizeof(int64_t);
+        } break;
+
+        case Op_NegateU64: {
+            vm->Sp -= sizeof(uint64_t);
+            uint64_t value = *(uint64_t*)vm->Sp;
+
+            *(uint64_t*)vm->Sp = -value;
+            vm->Sp += sizeof(uint64_t);
+        } break;
 
         case Op_PrintI64: {
             vm->Sp -= sizeof(int64_t);
@@ -218,8 +253,8 @@ bool VM_Step(VM* vm) {
             *(uint64_t*)vm->Sp = vm->Ip - vm->Code;
             vm->Sp += sizeof(uint64_t);
 
-            *(uint8_t**)vm->Sp = vm->Bp;
-            vm->Sp += sizeof(uint8_t*);
+            *(int64_t*)vm->Sp = vm->Bp - vm->Stack;
+            vm->Sp += sizeof(int64_t);
 
             vm->Bp = vm->Sp;
             vm->Ip = &vm->Code[location];
@@ -244,8 +279,8 @@ bool VM_Step(VM* vm) {
 
             vm->Sp = vm->Bp;
 
-            vm->Sp -= sizeof(uint8_t*);
-            vm->Bp = *(uint8_t**)vm->Sp;
+            vm->Sp -= sizeof(int64_t);
+            vm->Bp = &vm->Stack[*(int64_t*)vm->Sp];
 
             vm->Sp -= sizeof(uint64_t);
             uint64_t location = *(uint64_t*)vm->Sp;
@@ -318,7 +353,7 @@ void PrintBytecode(uint8_t* code, uint64_t codeSize) {
     uint8_t* ip = code;
     while ((uint64_t)(ip - code) < codeSize) {
         Op inst = *ip;
-        printf("%llu %s", ip - code, inst < Op_Count ? Op_Names[inst] : "Invalid");
+        printf("%05llu %s", ip - code, inst < Op_Count ? Op_Names[inst] : "Invalid");
         ip++;
         switch (inst) {
             case Op_Push: {
@@ -328,6 +363,7 @@ void PrintBytecode(uint8_t* code, uint64_t codeSize) {
                 printf(": Size = %llu", size);
             } break;
 
+            case Op_AllocStack:
             case Op_Pop:
             case Op_Dup:
             case Op_Equal: {

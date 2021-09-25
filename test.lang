@@ -1,3 +1,8 @@
+// BUG: Constants are initialized in the order they are declared
+// This will not work
+// a :: b;
+// b :: 5;
+
 main :: () {
     a := 6;
     b := factorial(a);

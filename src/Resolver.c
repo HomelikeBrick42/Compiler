@@ -390,7 +390,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
         } break;
 
         case AstKind_Assignment: {
-            if (!parentScope->Scope.ParentScope) {
+            if (parentScope->Scope.Global) {
                 fflush(stdout);
                 fprintf(stderr, "Cannot have assignments statements in global scope\n");
                 return false;
@@ -422,7 +422,7 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
         } break;
 
         case AstKind_If: {
-            if (!parentScope->Scope.ParentScope) {
+            if (parentScope->Scope.Global) {
                 fflush(stdout);
                 fprintf(stderr, "Cannot have if statements in global scope\n");
                 return false;
@@ -450,33 +450,35 @@ bool ResolveAst(Ast* ast, AstScope* parentScope, AstProcedure* parentProcedure) 
         } break;
 
         case AstKind_Return: {
-            if (!parentScope->Scope.ParentScope) {
+            if (parentScope->Scope.Global) {
                 fflush(stdout);
                 fprintf(stderr, "Cannot have return statements in global scope\n");
                 return false;
             }
 
-            if (!ResolveAst(ast->Return.Value, parentScope, parentProcedure)) {
-                return false;
-            }
+            if (ast->Return.Value) {
+                if (!ResolveAst(ast->Return.Value, parentScope, parentProcedure)) {
+                    return false;
+                }
 
-            if (!AssertTypesEqual(parentProcedure->Procedure.ResolvedReturnType, ast->Return.Value->ResolvedType)) {
-                return false;
+                if (!AssertTypesEqual(parentProcedure->Procedure.ResolvedReturnType, ast->Return.Value->ResolvedType)) {
+                    return false;
+                }
             }
         } break;
 
         case AstKind_Print: {
-            if (!parentScope->Scope.ParentScope) {
+            if (parentScope->Scope.Global) {
                 fflush(stdout);
                 fprintf(stderr, "Cannot have print statements in global scope\n");
                 return false;
             }
 
-            if (!ResolveAst(ast->Return.Value, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Print.Value, parentScope, parentProcedure)) {
                 return false;
             }
 
-            if (ast->Return.Value->ResolvedType->Kind != TypeKind_Integer) {
+            if (ast->Print.Value->ResolvedType->Kind != TypeKind_Integer) {
                 fflush(stdout);
                 fprintf(stderr, "Type '%s' is not printable\n", TypeKind_Names[ast->Return.Value->ResolvedType->Kind]);
                 return false;
@@ -654,7 +656,7 @@ Exit:
 
                 TypeProcedure* type = calloc(1, sizeof(TypeProcedure));
                 type->Kind          = TypeKind_Procedure;
-                type->Size          = 64;
+                type->Size          = 8;
 
                 if (ast->Procedure.ParameterCount > 0) {
                     type->Procedure.ParameterTypeCount = ast->Procedure.ParameterCount;
