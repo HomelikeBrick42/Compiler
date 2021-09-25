@@ -2,7 +2,7 @@ main :: () {
     a := 10;
 
     while a != 0 {
-        print a;
+        print(a);
 
         if a == 5 {
             a = a - 2;
