@@ -226,7 +226,7 @@ bool Resolver_Test() {
 
     bool success = !parser.WasError && !parser.Lexer.WasError;
     if (success) {
-        success = ResolveAst(file, NULL, NULL, NULL);
+        success = ResolveAst(file, NULL, NULL, NULL, false);
     }
 
     Parser_Destroy(&parser);
@@ -247,7 +247,7 @@ bool Emitter_Test(const char* filepath) {
         return false;
     }
 
-    success = ResolveAst(file, NULL, NULL, NULL);
+    success = ResolveAst(file, NULL, NULL, NULL, false);
     if (!success) {
         return false;
     }

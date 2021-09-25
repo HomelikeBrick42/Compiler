@@ -21,6 +21,7 @@ void Emitter_Destroy(Emitter* emitter) {
     free(emitter->Constants);
     free(emitter->PendingProcedureCallLocation);
     free(emitter->PendingProcedureBodies);
+    free(emitter->PendingEndLoopLocation);
 }
 
 void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast* ast, bool global) {
@@ -65,9 +66,9 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
         } break;
 
         case AstKind_If: {
-            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->If.ThenScope, global);
-            if (ast->If.ElseScope) {
-                Emitter_FindDeclarationOffsets(emitter, parentScope, ast->If.ElseScope, global);
+            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->If.ThenStatement, global);
+            if (ast->If.ElseStatement) {
+                Emitter_FindDeclarationOffsets(emitter, parentScope, ast->If.ElseStatement, global);
             }
         } break;
 
@@ -121,7 +122,9 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
         case AstKind_False:
         case AstKind_Name:
         case AstKind_Integer:
-        case AstKind_TypeExpression: {
+        case AstKind_TypeExpression:
+        case AstKind_Break:
+        case AstKind_Continue: {
         } break;
     }
 }
@@ -273,19 +276,23 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
             uint64_t jumpFalseLocation = emitter->CodeSize;
             Emitter_EmitU64(emitter, 0);
             Emitter_EmitU64(emitter, 1);
-            Emitter_EmitAst(emitter, ast->If.ThenScope, constantInitialization);
+            Emitter_EmitAst(emitter, ast->If.ThenStatement, constantInitialization);
             Emitter_EmitOp(emitter, Op_Jump);
             uint64_t jumpEndOfThen = emitter->CodeSize;
             Emitter_EmitU64(emitter, 0);
             *(uint64_t*)&emitter->Code[jumpFalseLocation] = emitter->CodeSize;
-            if (ast->If.ElseScope) {
-                Emitter_EmitAst(emitter, ast->If.ElseScope, constantInitialization);
+            if (ast->If.ElseStatement) {
+                Emitter_EmitAst(emitter, ast->If.ElseStatement, constantInitialization);
             }
             *(uint64_t*)&emitter->Code[jumpEndOfThen] = emitter->CodeSize;
         } break;
 
         case AstKind_While: {
-            uint64_t beginLoop = emitter->CodeSize;
+            emitter->StartLoop = emitter->CodeSize;
+
+            AstWhile* oldLoop    = emitter->CurrentLoop;
+            emitter->CurrentLoop = ast;
+
             Emitter_EmitAst(emitter, ast->While.Condition, constantInitialization);
             Emitter_EmitOp(emitter, Op_JumpZero);
             uint64_t jumpFalseLocation = emitter->CodeSize;
@@ -293,8 +300,35 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
             Emitter_EmitU64(emitter, 1);
             Emitter_EmitAst(emitter, ast->While.Scope, constantInitialization);
             Emitter_EmitOp(emitter, Op_Jump);
-            Emitter_EmitU64(emitter, beginLoop);
+            Emitter_EmitU64(emitter, emitter->StartLoop);
             *(uint64_t*)&emitter->Code[jumpFalseLocation] = emitter->CodeSize;
+
+            for (uint64_t i = 0; i < emitter->PendingEndLoopLocationCount; i++) {
+                if (emitter->PendingEndLoopLocation[i].While == ast) {
+                    *(uint64_t*)&emitter->Code[emitter->PendingEndLoopLocation[i].Location] = emitter->CodeSize;
+                }
+            }
+
+            emitter->CurrentLoop = oldLoop;
+        } break;
+
+        case AstKind_Break: {
+            Emitter_EmitOp(emitter, Op_Jump);
+            emitter->PendingEndLoopLocation =
+                realloc(emitter->PendingEndLoopLocation,
+                        (emitter->PendingEndLoopLocationCount + 1) * sizeof(emitter->PendingEndLoopLocation[0]));
+            emitter->PendingEndLoopLocation[emitter->PendingEndLoopLocationCount] =
+                (__typeof__(emitter->PendingEndLoopLocation[0])){
+                    .While    = emitter->CurrentLoop,
+                    .Location = emitter->CodeSize,
+                };
+            emitter->PendingEndLoopLocationCount++;
+            Emitter_EmitU64(emitter, 0);
+        } break;
+
+        case AstKind_Continue: {
+            Emitter_EmitOp(emitter, Op_Jump);
+            Emitter_EmitU64(emitter, emitter->StartLoop);
         } break;
 
         case AstKind_Return: {

@@ -13,8 +13,11 @@
     TOKEN_KIND(KeywordTrue, "true")           \
     TOKEN_KIND(KeywordFalse, "false")         \
     TOKEN_KIND(KeywordIf, "if")               \
+    TOKEN_KIND(KeywordDo, "do")               \
     TOKEN_KIND(KeywordElse, "else")           \
     TOKEN_KIND(KeywordWhile, "while")         \
+    TOKEN_KIND(KeywordBreak, "break")         \
+    TOKEN_KIND(KeywordContinue, "continue")   \
     TOKEN_KIND(KeywordReturn, "return")       \
     TOKEN_KIND(KeywordPrint, "print")         \
     TOKEN_KIND(KeywordTransmute, "transmute") \

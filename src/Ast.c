@@ -97,12 +97,12 @@ void PrintAst(Ast* ast, uint64_t indent) {
             putchar('\n');
             Indent(indent + 1);
             printf("Then: ");
-            PrintAst(ast->If.ThenScope, indent + 1);
-            if (ast->If.ElseScope) {
+            PrintAst(ast->If.ThenStatement, indent + 1);
+            if (ast->If.ElseStatement) {
                 putchar('\n');
                 Indent(indent + 1);
                 printf("Else: ");
-                PrintAst(ast->If.ElseScope, indent + 1);
+                PrintAst(ast->If.ElseStatement, indent + 1);
             }
         } break;
 
@@ -206,6 +206,10 @@ void PrintAst(Ast* ast, uint64_t indent) {
         case AstKind_True:
         case AstKind_False:
         case AstKind_TypeExpression:
+            break;
+        case AstKind_Break:
+            break;
+        case AstKind_Continue:
             break;
     }
 }

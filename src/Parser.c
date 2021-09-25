@@ -93,25 +93,51 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
             Parser_ExpectToken(parser, TokenKind_KeywordIf);
 
             iff->If.Condition = Parser_ParseExpression(parser);
-            iff->If.ThenScope = Parser_ParseScope(parser, true);
+            if (parser->Current.Kind != TokenKind_OpenBrace) {
+                Parser_ExpectToken(parser, TokenKind_KeywordDo);
+                iff->If.ThenStatement = Parser_ParseStatement(parser);
+            } else {
+                iff->If.ThenStatement = Parser_ParseScope(parser, true);
+            }
+
             if (parser->Current.Kind == TokenKind_KeywordElse) {
                 Parser_ExpectToken(parser, TokenKind_KeywordElse);
-                iff->If.ElseScope = Parser_ParseScope(parser, true);
+                iff->If.ElseStatement = Parser_ParseStatement(parser);
             }
 
             return iff;
         } break;
 
+        case TokenKind_OpenBrace: {
+            return Parser_ParseScope(parser, true);
+        } break;
+
         case TokenKind_KeywordWhile: {
             AstWhile* whilee = calloc(1, sizeof(AstWhile));
-            whilee->Kind = AstKind_While;
+            whilee->Kind     = AstKind_While;
 
             Parser_ExpectToken(parser, TokenKind_KeywordWhile);
 
             whilee->While.Condition = Parser_ParseExpression(parser);
-            whilee->While.Scope = Parser_ParseScope(parser, true);
+            whilee->While.Scope     = Parser_ParseScope(parser, true);
 
             return whilee;
+        } break;
+
+        case TokenKind_KeywordBreak: {
+            AstBreak* breakk = calloc(1, sizeof(AstBreak));
+            breakk->Kind     = AstKind_Break;
+            Parser_ExpectToken(parser, TokenKind_KeywordBreak);
+            Parser_ExpectToken(parser, TokenKind_Semicolon);
+            return breakk;
+        } break;
+
+        case TokenKind_KeywordContinue: {
+            AstContinue* continuee = calloc(1, sizeof(AstContinue));
+            continuee->Kind        = AstKind_Continue;
+            Parser_ExpectToken(parser, TokenKind_KeywordContinue);
+            Parser_ExpectToken(parser, TokenKind_Semicolon);
+            return continuee;
         } break;
 
         case TokenKind_KeywordPrint: {
@@ -234,14 +260,14 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
         case TokenKind_KeywordTrue: {
             Parser_ExpectToken(parser, TokenKind_KeywordTrue);
             AstTrue* truee = calloc(1, sizeof(AstTrue));
-            truee->Kind = AstKind_True;
+            truee->Kind    = AstKind_True;
             return truee;
         } break;
 
         case TokenKind_KeywordFalse: {
             Parser_ExpectToken(parser, TokenKind_KeywordFalse);
             AstFalse* falsee = calloc(1, sizeof(AstFalse));
-            falsee->Kind = AstKind_False;
+            falsee->Kind     = AstKind_False;
             return falsee;
         } break;
 
@@ -372,26 +398,26 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
             Parser_ExpectToken(parser, TokenKind_KeywordTransmute);
 
             AstTransmute* transmute = calloc(1, sizeof(AstTransmute));
-            transmute->Kind = AstKind_Transmute;
+            transmute->Kind         = AstKind_Transmute;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
             transmute->Transmute.Type = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
             transmute->Transmute.Expression = Parser_ParseBinaryExpression(parser, unaryPrecedence);
-            left = transmute;
+            left                            = transmute;
         } else if (parser->Current.Kind == TokenKind_KeywordCast) {
             Parser_ExpectToken(parser, TokenKind_KeywordCast);
 
             AstCast* cast = calloc(1, sizeof(AstCast));
-            cast->Kind = AstKind_Cast;
+            cast->Kind    = AstKind_Cast;
 
             Parser_ExpectToken(parser, TokenKind_OpenParenthesis);
             cast->Cast.Type = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
 
             cast->Cast.Expression = Parser_ParseBinaryExpression(parser, unaryPrecedence);
-            left = cast;
+            left                  = cast;
         } else {
             AstUnary* unary = calloc(1, sizeof(AstUnary));
             unary->Kind     = AstKind_Unary;

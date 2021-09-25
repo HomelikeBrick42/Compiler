@@ -43,8 +43,8 @@ typedef struct Type Type;
                                                 \
     AST_KIND(If, {                              \
         AstExpression* Condition;               \
-        AstScope* ThenScope;                    \
-        AstScope* ElseScope;                    \
+        AstStatement* ThenStatement;            \
+        AstStatement* ElseStatement;            \
     })                                          \
                                                 \
     AST_KIND(While, {                           \
@@ -53,6 +53,8 @@ typedef struct Type Type;
     })                                          \
                                                 \
     AST_KIND(Return, { AstExpression* Value; }) \
+    AST_KIND(Break, {})                         \
+    AST_KIND(Continue, {})                      \
                                                 \
     AST_KIND(Print, { AstExpression* Value; })  \
                                                 \

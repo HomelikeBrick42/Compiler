@@ -19,6 +19,13 @@ typedef struct Emitter {
     uint64_t PendingProcedureCallLocationCount;
     AstProcedure** PendingProcedureBodies;
     uint64_t PendingProcedureBodyCount;
+    uint64_t StartLoop;
+    AstWhile* CurrentLoop;
+    struct {
+        AstWhile* While;
+        uint64_t Location;
+    } * PendingEndLoopLocation;
+    uint64_t PendingEndLoopLocationCount;
 } Emitter;
 
 bool Emitter_Create(Emitter* emitter);

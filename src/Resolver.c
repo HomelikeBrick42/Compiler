@@ -261,9 +261,9 @@ static bool BodyReturns(Ast* ast) {
         } break;
 
         case AstKind_If: {
-            bool returns = BodyReturns(ast->If.ThenScope);
-            if (returns && ast->If.ElseScope) {
-                returns = BodyReturns(ast->If.ElseScope);
+            bool returns = BodyReturns(ast->If.ThenStatement);
+            if (returns && ast->If.ElseStatement) {
+                returns = BodyReturns(ast->If.ElseStatement);
                 return returns;
             }
             return false;
@@ -282,7 +282,7 @@ static bool BodyReturns(Ast* ast) {
 static AstProcedure** PendingProcedureBodies = NULL;
 static uint64_t PendingProcedureBodyCount    = 0;
 
-bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedure* parentProcedure) {
+bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedure* parentProcedure, bool inLoop) {
     switch (ast->Resolution) {
         case Resolution_Resolved: {
             return true;
@@ -304,14 +304,14 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
     switch (ast->Kind) {
         case AstKind_Scope: {
             for (uint64_t i = 0; i < ast->Scope.StatementCount; i++) {
-                if (!ResolveAst(ast->Scope.Statements[i], NULL, ast, parentProcedure)) {
+                if (!ResolveAst(ast->Scope.Statements[i], NULL, ast, parentProcedure, inLoop)) {
                     return false;
                 }
             }
 
             for (int64_t i = (int64_t)PendingProcedureBodyCount - 1; i >= 0; i--) {
                 PendingProcedureBodyCount--;
-                if (!ResolveAst(PendingProcedureBodies[i]->Procedure.Body, NULL, ast, PendingProcedureBodies[i])) {
+                if (!ResolveAst(PendingProcedureBodies[i]->Procedure.Body, NULL, ast, PendingProcedureBodies[i], false)) {
                     return false;
                 }
 
@@ -326,7 +326,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
         } break;
 
         case AstKind_Transmute: {
-            if (!ResolveAst(ast->Transmute.Type, &Type_Type, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Transmute.Type, &Type_Type, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -335,7 +335,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->Transmute.Expression, ast->ResolvedType, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Transmute.Expression, ast->ResolvedType, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -347,7 +347,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
         } break;
 
         case AstKind_Cast: {
-            if (!ResolveAst(ast->Cast.Type, &Type_Type, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Cast.Type, &Type_Type, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -356,7 +356,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->Cast.Expression, ast->ResolvedType, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Cast.Expression, ast->ResolvedType, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -383,7 +383,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
 
         case AstKind_Declaration: {
             if (ast->Declaration.Type) {
-                if (!ResolveAst(ast->Declaration.Type, &Type_Type, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Declaration.Type, &Type_Type, parentScope, parentProcedure, inLoop)) {
                     return false;
                 }
 
@@ -394,7 +394,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
             }
 
             if (ast->Declaration.Value) {
-                if (!ResolveAst(ast->Declaration.Value, ast->Declaration.ResolvedType, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Declaration.Value, ast->Declaration.ResolvedType, parentScope, parentProcedure, inLoop)) {
                     return false;
                 }
             }
@@ -422,7 +422,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->Assignment.Operand, NULL, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Assignment.Operand, NULL, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -438,7 +438,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->Assignment.Value, ast->Assignment.Operand->ResolvedType, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Assignment.Value, ast->Assignment.Operand->ResolvedType, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -454,7 +454,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->If.Condition, &Type_Bool, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->If.Condition, &Type_Bool, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -464,12 +464,12 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->If.ThenScope, NULL, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->If.ThenStatement, NULL, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
-            if (ast->If.ElseScope) {
-                if (!ResolveAst(ast->If.ElseScope, NULL, parentScope, parentProcedure)) {
+            if (ast->If.ElseStatement) {
+                if (!ResolveAst(ast->If.ElseStatement, NULL, parentScope, parentProcedure, inLoop)) {
                     return false;
                 }
             }
@@ -482,7 +482,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->While.Condition, &Type_Bool, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->While.Condition, &Type_Bool, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -492,7 +492,23 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->While.Scope, NULL, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->While.Scope, NULL, parentScope, parentProcedure, true)) {
+                return false;
+            }
+        } break;
+
+        case AstKind_Break: {
+            if (!inLoop) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have break outside of a loop\n");
+                return false;
+            }
+        } break;
+
+        case AstKind_Continue: {
+            if (!inLoop) {
+                fflush(stdout);
+                fprintf(stderr, "Cannot have continue outside of a loop\n");
                 return false;
             }
         } break;
@@ -505,7 +521,8 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
             }
 
             if (ast->Return.Value) {
-                if (!ResolveAst(ast->Return.Value, parentProcedure->Procedure.ResolvedReturnType, parentScope, parentProcedure)) {
+                if (!ResolveAst(
+                        ast->Return.Value, parentProcedure->Procedure.ResolvedReturnType, parentScope, parentProcedure, inLoop)) {
                     return false;
                 }
 
@@ -522,7 +539,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (!ResolveAst(ast->Print.Value, NULL, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Print.Value, NULL, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -535,7 +552,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
         } break;
 
         case AstKind_Unary: {
-            if (!ResolveAst(ast->Unary.Operand, expectedType, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Unary.Operand, expectedType, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -561,7 +578,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
         } break;
 
         case AstKind_Binary: {
-            if (!ResolveAst(ast->Binary.Left, expectedType, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Binary.Left, expectedType, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -570,7 +587,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 expectedType = ast->Binary.Left->ResolvedType;
             }
 
-            if (!ResolveAst(ast->Binary.Right, expectedType, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Binary.Right, expectedType, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -639,7 +656,7 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                                    &declaration->Declaration.Name.Source[declaration->Declaration.Name.Position],
                                    nameToken.Length) == 0) {
                             if (!ast->Name.ResolvedDeclaration) {
-                                ResolveAst(declaration, NULL, scope, parentProcedure);
+                                ResolveAst(declaration, NULL, scope, parentProcedure, false);
                                 ast->Name.ResolvedDeclaration = declaration;
                             } else {
                                 fflush(stdout);
@@ -681,7 +698,7 @@ Exit:
 
         case AstKind_Procedure: {
             for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
-                if (!ResolveAst(ast->Procedure.Parameters[i], NULL, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Procedure.Parameters[i], NULL, parentScope, parentProcedure, false)) {
                     return false;
                 }
 
@@ -697,7 +714,7 @@ Exit:
             }
 
             if (ast->Procedure.ReturnType) {
-                if (!ResolveAst(ast->Procedure.ReturnType, NULL, parentScope, parentProcedure)) {
+                if (!ResolveAst(ast->Procedure.ReturnType, NULL, parentScope, parentProcedure, false)) {
                     return false;
                 }
 
@@ -744,7 +761,7 @@ Exit:
         } break;
 
         case AstKind_Call: {
-            if (!ResolveAst(ast->Call.Operand, NULL, parentScope, parentProcedure)) {
+            if (!ResolveAst(ast->Call.Operand, NULL, parentScope, parentProcedure, inLoop)) {
                 return false;
             }
 
@@ -766,7 +783,8 @@ Exit:
                 if (!ResolveAst(ast->Call.Arguments[i],
                                 ast->Call.Operand->ResolvedType->Procedure.ParameterTypes[i],
                                 parentScope,
-                                parentProcedure)) {
+                                parentProcedure,
+                                inLoop)) {
                     return false;
                 }
             }
