@@ -93,6 +93,19 @@ typedef struct Type Type;
         AstDeclaration* ResolvedDeclaration;    \
     })                                          \
                                                 \
+    AST_KIND(Struct, {                          \
+        AstDeclaration** Members;               \
+        uint64_t MemberCount;                   \
+    })                                          \
+                                                \
+    AST_KIND(MemberAccess, {                    \
+        AstExpression* Operand;                 \
+        Token Name;                             \
+        Type* ResolvedStruct;                   \
+        bool GlobalOffset;                      \
+        uint64_t Offset;                        \
+    })                                          \
+                                                \
     AST_KIND(Procedure, {                       \
         AstDeclaration** Parameters;            \
         uint64_t ParameterCount;                \

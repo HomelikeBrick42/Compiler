@@ -32,6 +32,48 @@ void Emitter_FindDeclarationOffsets(Emitter* emitter, AstScope* parentScope, Ast
             }
         } break;
 
+        case AstKind_Struct: {
+            uint64_t memberOffset = 0;
+            for (uint64_t i = 0; i < ast->Struct.MemberCount; i++) {
+                ast->Struct.Members[i]->Declaration.Offset = memberOffset;
+                memberOffset += ast->Struct.Members[i]->Declaration.ResolvedType->Size;
+            }
+        } break;
+
+        case AstKind_MemberAccess: {
+            Emitter_FindDeclarationOffsets(emitter, parentScope, ast->MemberAccess.Operand, global);
+
+            Token nameToken = ast->MemberAccess.Name;
+
+            if (ast->MemberAccess.Operand->Kind == AstKind_Name) {
+                ast->MemberAccess.Offset = ast->MemberAccess.Operand->Name.ResolvedDeclaration->Declaration.Offset;
+            } else if (ast->MemberAccess.Operand->Kind == AstKind_MemberAccess) {
+                ast->MemberAccess.Offset = ast->MemberAccess.Operand->MemberAccess.Offset;
+            } else {
+                assert(false);
+            }
+
+            for (uint64_t i = 0; i < ast->MemberAccess.ResolvedStruct->Struct.MemberCount; i++) {
+                Token memberName = ast->MemberAccess.ResolvedStruct->Struct.MemberNames[i];
+                if (nameToken.Length == memberName.Length) {
+                    if (memcmp(&nameToken.Source[nameToken.Position],
+                               &memberName.Source[memberName.Position],
+                               nameToken.Length) == 0) {
+                        break;
+                    }
+                }
+                ast->MemberAccess.Offset += ast->MemberAccess.ResolvedStruct->Struct.MemberTypes[i]->Size;
+            }
+
+            if (ast->MemberAccess.Operand->Kind == AstKind_Name) {
+                ast->MemberAccess.GlobalOffset = ast->MemberAccess.Operand->Name.ResolvedDeclaration->Declaration.GlobalOffset;
+            } else if (ast->MemberAccess.Operand->Kind == AstKind_MemberAccess) {
+                ast->MemberAccess.GlobalOffset = ast->MemberAccess.Operand->MemberAccess.GlobalOffset;
+            } else {
+                assert(false);
+            }
+        } break;
+
         case AstKind_Transmute: {
             Emitter_FindDeclarationOffsets(emitter, parentScope, ast->Transmute.Expression, global);
         } break;
@@ -224,6 +266,19 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
             }
         } break;
 
+        case AstKind_Struct: {
+        } break;
+
+        case AstKind_MemberAccess: {
+            if (ast->MemberAccess.GlobalOffset) {
+                Emitter_EmitOp(emitter, Op_LoadAbsolute);
+            } else {
+                Emitter_EmitOp(emitter, Op_LoadRelative);
+            }
+            Emitter_EmitU64(emitter, ast->MemberAccess.Offset);
+            Emitter_EmitU64(emitter, ast->ResolvedType->Size);
+        } break;
+
         case AstKind_Transmute: {
             Emitter_EmitAst(emitter, ast->Transmute.Expression, constantInitialization);
         } break;
@@ -246,28 +301,42 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
 
         case AstKind_Declaration: {
             if ((ast->Declaration.Constant && constantInitialization) || !ast->Declaration.Constant) {
-                Emitter_EmitAst(emitter, ast->Declaration.Value, constantInitialization);
-                if (ast->Declaration.GlobalOffset) {
-                    Emitter_EmitOp(emitter, Op_StoreAbsolute);
-                } else {
-                    Emitter_EmitOp(emitter, Op_StoreRelative);
+                if (ast->Declaration.Value) {
+                    Emitter_EmitAst(emitter, ast->Declaration.Value, constantInitialization);
+                    if (ast->Declaration.GlobalOffset) {
+                        Emitter_EmitOp(emitter, Op_StoreAbsolute);
+                    } else {
+                        Emitter_EmitOp(emitter, Op_StoreRelative);
+                    }
+                    Emitter_EmitU64(emitter, ast->Declaration.Offset);
+                    Emitter_EmitU64(emitter, ast->Declaration.ResolvedType->Size);
                 }
-                Emitter_EmitU64(emitter, ast->Declaration.Offset);
-                Emitter_EmitU64(emitter, ast->Declaration.ResolvedType->Size);
             }
         } break;
 
         case AstKind_Assignment: {
             Emitter_EmitAst(emitter, ast->Assignment.Value, constantInitialization);
             // TODO: Support other types of assignment
-            assert(ast->Assignment.Operand->Kind == AstKind_Name);
-            if (ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.GlobalOffset) {
-                Emitter_EmitOp(emitter, Op_StoreAbsolute);
+            assert(ast->Assignment.Operand->Kind == AstKind_Name || ast->Assignment.Operand->Kind == AstKind_MemberAccess);
+            if (ast->Assignment.Operand->Kind == AstKind_Name) {
+                if (ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.GlobalOffset) {
+                    Emitter_EmitOp(emitter, Op_StoreAbsolute);
+                } else {
+                    Emitter_EmitOp(emitter, Op_StoreRelative);
+                }
+                Emitter_EmitU64(emitter, ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.Offset);
+                Emitter_EmitU64(emitter, ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.ResolvedType->Size);
+            } else if (ast->Assignment.Operand->Kind == AstKind_MemberAccess) {
+                if (ast->Assignment.Operand->MemberAccess.GlobalOffset) {
+                    Emitter_EmitOp(emitter, Op_StoreAbsolute);
+                } else {
+                    Emitter_EmitOp(emitter, Op_StoreRelative);
+                }
+                Emitter_EmitU64(emitter, ast->Assignment.Operand->MemberAccess.Offset);
+                Emitter_EmitU64(emitter, ast->Assignment.Operand->ResolvedType->Size);
             } else {
-                Emitter_EmitOp(emitter, Op_StoreRelative);
+                assert(false);
             }
-            Emitter_EmitU64(emitter, ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.Offset);
-            Emitter_EmitU64(emitter, ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.ResolvedType->Size);
         } break;
 
         case AstKind_If: {

@@ -13,6 +13,12 @@
     TYPE_KIND(Bool, {})                  \
     TYPE_KIND(Void, {})                  \
                                          \
+    TYPE_KIND(Struct, {                  \
+        Type** MemberTypes;              \
+        Token* MemberNames;              \
+        uint64_t MemberCount;            \
+    })                                   \
+                                         \
     TYPE_KIND(Procedure, {               \
         Type** ParameterTypes;           \
         uint64_t ParameterTypeCount;     \

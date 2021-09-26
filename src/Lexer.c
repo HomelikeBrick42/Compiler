@@ -141,6 +141,7 @@ Start:
                 MATCH1(TokenKind_Semicolon, ';');
                 MATCH1(TokenKind_Colon, ':');
                 MATCH1(TokenKind_Comma, ',');
+                MATCH1(TokenKind_Period, '.');
                 MATCH1(TokenKind_OpenParenthesis, '(');
                 MATCH1(TokenKind_CloseParenthesis, ')');
                 MATCH1(TokenKind_OpenBrace, '{');

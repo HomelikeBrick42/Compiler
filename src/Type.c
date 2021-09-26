@@ -31,6 +31,16 @@ bool TypesEqual(Type* a, Type* b) {
         case TypeKind_Integer:
             return a->Integer.Signed == b->Integer.Signed;
 
+        case TypeKind_Struct: {
+            for (uint64_t i = 0; i < a->Struct.MemberCount; i++) {
+                if (!TypesEqual(a->Struct.MemberTypes[i], b->Struct.MemberTypes[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        } break;
+
         case TypeKind_Procedure: {
             if (!TypesEqual(a->Procedure.ReturnType, b->Procedure.ReturnType)) {
                 return false;

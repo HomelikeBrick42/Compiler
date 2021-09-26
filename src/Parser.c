@@ -339,6 +339,27 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
             }
         } break;
 
+        case TokenKind_KeywordStruct: {
+            AstStruct* structt = calloc(1, sizeof(AstStruct));
+            structt->Kind = AstKind_Struct;
+
+            Parser_ExpectToken(parser, TokenKind_KeywordStruct);
+
+            Parser_ExpectToken(parser, TokenKind_OpenBrace);
+
+            while (parser->Current.Kind != TokenKind_CloseBrace && parser->Current.Kind != TokenKind_EndOfFile) {
+                structt->Struct.Members = realloc(structt->Struct.Members, (structt->Struct.MemberCount + 1) * sizeof(AstDeclaration*));
+                Token name = Parser_ExpectToken(parser, TokenKind_Identifier);
+                structt->Struct.Members[structt->Struct.MemberCount] = Parser_ParseDeclaration(parser, name, false);
+                Parser_ExpectToken(parser, TokenKind_Semicolon);
+                structt->Struct.MemberCount++;
+            }
+
+            Parser_ExpectToken(parser, TokenKind_CloseBrace);
+
+            return structt;
+        } break;
+
         default: {
             fflush(stdout);
             fprintf(stderr,
@@ -357,12 +378,12 @@ uint64_t Parser_GetUnaryOperatorPrecedence(TokenKind kind) {
     switch (kind) {
         case TokenKind_KeywordTransmute:
         case TokenKind_KeywordCast:
-            return 5;
+            return 6;
 
         case TokenKind_Plus:
         case TokenKind_Minus:
         case TokenKind_Bang:
-            return 4;
+            return 5;
 
         default:
             return 0;
@@ -371,6 +392,9 @@ uint64_t Parser_GetUnaryOperatorPrecedence(TokenKind kind) {
 
 uint64_t Parser_GetBinaryOperatorPrecedence(TokenKind kind) {
     switch (kind) {
+        case TokenKind_Period:
+            return 4;
+
         case TokenKind_Asterisk:
         case TokenKind_Slash:
             return 3;
@@ -461,9 +485,21 @@ AstExpression* Parser_ParseBinaryExpression(Parser* parser, uint64_t parentPrece
 
             binary->Binary.Left     = left;
             binary->Binary.Operator = Parser_NextToken(parser);
-            binary->Binary.Right    = Parser_ParseBinaryExpression(parser, binaryPrecedence);
 
-            left = binary;
+            if (binary->Binary.Operator.Kind == TokenKind_Period) {
+                free(binary);
+
+                AstMemberAccess* member = calloc(1, sizeof(AstMemberAccess));
+                member->Kind = AstKind_MemberAccess;
+                member->MemberAccess.Operand = left;
+                member->MemberAccess.Name = Parser_ExpectToken(parser, TokenKind_Identifier);
+
+                left = member;
+            } else {
+                binary->Binary.Right = Parser_ParseBinaryExpression(parser, binaryPrecedence);
+
+                left = binary;
+            }
         }
     }
 

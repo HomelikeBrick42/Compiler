@@ -179,6 +179,26 @@ static Type* ExpressionToType(AstExpression* expression) {
     }
 
     switch (expression->Kind) {
+        case AstKind_Struct: {
+            AstStructData* structt = &expression->Struct;
+
+            TypeStruct* structType = calloc(1, sizeof(TypeStruct));
+            structType->Kind       = TypeKind_Struct;
+
+            if (structt->MemberCount > 0) {
+                structType->Struct.MemberCount = structt->MemberCount;
+                structType->Struct.MemberTypes = calloc(structType->Struct.MemberCount, sizeof(Type*));
+                structType->Struct.MemberNames = calloc(structType->Struct.MemberCount, sizeof(Token));
+                for (uint64_t i = 0; i < structt->MemberCount; i++) {
+                    structType->Struct.MemberTypes[i] = structt->Members[i]->Declaration.ResolvedType;
+                    structType->Struct.MemberNames[i] = structt->Members[i]->Declaration.Name;
+                    structType->Size += structType->Struct.MemberTypes[i]->Size;
+                }
+            }
+
+            return structType;
+        } break;
+
         case AstKind_Procedure: {
             AstProcedureData* procedure = &expression->Procedure;
             if (procedure->Body) {
@@ -193,7 +213,7 @@ static Type* ExpressionToType(AstExpression* expression) {
 
             if (procedure->ParameterCount > 0) {
                 type->Procedure.ParameterTypeCount = procedure->ParameterCount;
-                type->Procedure.ParameterTypes     = calloc(1, type->Procedure.ParameterTypeCount * sizeof(Type));
+                type->Procedure.ParameterTypes     = calloc(type->Procedure.ParameterTypeCount, sizeof(Type*));
                 for (uint64_t i = 0; i < procedure->ParameterCount; i++) {
                     type->Procedure.ParameterTypes[i] = procedure->Parameters[i]->Declaration.ResolvedType;
                 }
@@ -325,6 +345,65 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
             }
         } break;
 
+        case AstKind_Struct: {
+            for (uint64_t i = 0; i < ast->Struct.MemberCount; i++) {
+                if (!ResolveAst(ast->Struct.Members[i], NULL, parentScope, parentProcedure, false)) {
+                    return false;
+                }
+
+                if (ast->Struct.Members[i]->Declaration.Value) {
+                    fflush(stdout);
+                    fprintf(stderr, "Default values are not supported for struct literals\n");
+                    return false;
+                }
+            }
+
+            ast->ResolvedType = &Type_Type;
+        } break;
+
+        case AstKind_MemberAccess: {
+            if (!ResolveAst(ast->MemberAccess.Operand, NULL, parentScope, parentProcedure, inLoop)) {
+                return false;
+            }
+
+            if (ast->MemberAccess.Operand->Kind != AstKind_Name && ast->MemberAccess.Operand->Kind != AstKind_MemberAccess) {
+                fflush(stdout);
+                fprintf(stderr, "Internal Error: Unable to access member of non-name\n");
+                return false;
+            }
+
+            if (ast->MemberAccess.Operand->ResolvedType->Kind != TypeKind_Struct) {
+                fflush(stdout);
+                fprintf(stderr, "Unable to access member of non-struct\n");
+                return false;
+            }
+
+            ast->MemberAccess.ResolvedStruct = ast->MemberAccess.Operand->ResolvedType;
+
+            Token nameToken = ast->MemberAccess.Name;
+
+            for (uint64_t i = 0; i < ast->MemberAccess.ResolvedStruct->Struct.MemberCount; i++) {
+                Token memberName = ast->MemberAccess.ResolvedStruct->Struct.MemberNames[i];
+                if (nameToken.Length == memberName.Length) {
+                    if (memcmp(&nameToken.Source[nameToken.Position],
+                               &memberName.Source[memberName.Position],
+                               nameToken.Length) == 0) {
+                        ast->ResolvedType = ast->MemberAccess.ResolvedStruct->Struct.MemberTypes[i];
+                        break;
+                    }
+                }
+            }
+
+            if (!ast->ResolvedType) {
+                fflush(stdout);
+                fprintf(stderr,
+                        "Unable to find struct name '%.*s'\n",
+                        (uint32_t)nameToken.Length,
+                        &nameToken.Source[nameToken.Position]);
+                return false;
+            }
+        } break;
+
         case AstKind_Transmute: {
             if (!ResolveAst(ast->Transmute.Type, &Type_Type, parentScope, parentProcedure, inLoop)) {
                 return false;
@@ -426,17 +505,20 @@ bool ResolveAst(Ast* ast, Type* expectedType, AstScope* parentScope, AstProcedur
                 return false;
             }
 
-            if (ast->Assignment.Operand->Kind != AstKind_Name) {
+            if (ast->Assignment.Operand->Kind != AstKind_Name && ast->Assignment.Operand->Kind != AstKind_MemberAccess) {
                 fflush(stdout);
                 fprintf(stderr, "Cannot assign to something that is not a name\n");
                 return false;
             }
 
+            // TODO: Check if not constant
+            /*
             if (ast->Assignment.Operand->Name.ResolvedDeclaration->Declaration.Constant) {
                 fflush(stdout);
                 fprintf(stderr, "Cannot assign to a constant\n");
                 return false;
             }
+            */
 
             if (!ResolveAst(ast->Assignment.Value, ast->Assignment.Operand->ResolvedType, parentScope, parentProcedure, inLoop)) {
                 return false;
@@ -699,6 +781,12 @@ Exit:
         case AstKind_Procedure: {
             for (uint64_t i = 0; i < ast->Procedure.ParameterCount; i++) {
                 if (!ResolveAst(ast->Procedure.Parameters[i], NULL, parentScope, parentProcedure, false)) {
+                    return false;
+                }
+
+                if (ast->Procedure.Parameters[i]->Declaration.Value) {
+                    fflush(stdout);
+                    fprintf(stderr, "Default values are not supported for procedure parameters\n");
                     return false;
                 }
 

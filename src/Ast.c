@@ -33,6 +33,28 @@ void PrintAst(Ast* ast, uint64_t indent) {
             }
         } break;
 
+        case AstKind_Struct: {
+            putchar('\n');
+            for (uint64_t i = 0; i < ast->Struct.MemberCount; i++) {
+                Indent(indent + 1);
+                PrintAst(ast->Struct.Members[i], indent + 1);
+                if (i < ast->Struct.MemberCount - 1) {
+                    putchar('\n');
+                }
+            }
+        } break;
+
+        case AstKind_MemberAccess: {
+            putchar('\n');
+            Indent(indent + 1);
+            printf("Operand: ");
+            PrintAst(ast->MemberAccess.Operand, indent + 1);
+            Token nameToken = ast->MemberAccess.Name;
+            putchar('\n');
+            Indent(indent + 1);
+            printf("Member: '%.*s'", (uint32_t)nameToken.Length, &nameToken.Source[nameToken.Position]);
+        } break;
+
         case AstKind_Transmute: {
             putchar('\n');
             Indent(indent + 1);

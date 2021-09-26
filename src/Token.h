@@ -22,11 +22,13 @@
     TOKEN_KIND(KeywordPrint, "print")         \
     TOKEN_KIND(KeywordTransmute, "transmute") \
     TOKEN_KIND(KeywordCast, "cast")           \
+    TOKEN_KIND(KeywordStruct, "struct")       \
     TOKEN_KIND(KeywordEnd, "")                \
                                               \
     TOKEN_KIND(Semicolon, ";")                \
     TOKEN_KIND(Colon, ":")                    \
     TOKEN_KIND(Comma, ",")                    \
+    TOKEN_KIND(Period, ".")                   \
     TOKEN_KIND(OpenParenthesis, "(")          \
     TOKEN_KIND(CloseParenthesis, ")")         \
     TOKEN_KIND(OpenBrace, "{")                \
