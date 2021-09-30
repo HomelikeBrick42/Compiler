@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Compiler2 C)
+project(Compiler C)
 
 set(CMAKE_C_STANDARD 11)
 
@@ -19,5 +19,18 @@ endif ()
 include_directories(src)
 
 add_executable(
-        Compiler2
-        main.c)
+        Compiler
+        src/Array.h
+        src/Ast.c
+        src/Ast.h
+        src/AstBeginEndSwitchCases.h
+        src/Lexer.c
+        src/Lexer.h
+        src/Main.c
+        src/Parser.c
+        src/Parser.h
+        src/Strings.c
+        src/Strings.h
+        src/Token.c
+        src/Token.h
+        src/TokenBeginEndSwitchCases.h)

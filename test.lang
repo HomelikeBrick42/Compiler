@@ -1,0 +1,27 @@
+print_int :: (value: int) -> void #compiler_proc "print_int";
+
+factorial :: (n: int) -> int {
+    if n <= 1 {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+}
+
+factorial_non_recursive :: (n: int) -> int {
+    value := 1;
+    while n > 1 {
+        value *= n;
+        n -= 1;
+    }
+    return value;
+}
+
+main :: () -> void {
+    a: int = 1 + 2 * 3;
+    print_int(a);
+    value := factorial(a);
+    print_int(value);
+    value = factorial_non_recursive(a);
+    print_int(value);
+}
