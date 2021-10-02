@@ -46,12 +46,16 @@ static void Parser_SetExpressionParentStatement(AstExpression* expression, AstSt
             }
         } break;
 
+        case AstKind_Procedure: {
+            Parser_SetExpressionParentStatement(expression->Procedure.ReturnType, statement);
+        } break;
+
+        case AstKind_BuitinType:
         case AstKind_InvalidExpression:
         case AstKind_Integer:
         case AstKind_Float:
         case AstKind_String:
-        case AstKind_Name:
-        case AstKind_Procedure: {
+        case AstKind_Name: {
         } break;
 
         default: {
@@ -144,9 +148,10 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
         } break;
 
         case TokenKind_If: {
-            AstIf* iff        = AstIf_Create();
-            iff->If.IfToken   = Parser_ExpectToken(parser, TokenKind_If);
-            iff->If.Condition = Parser_ParseExpression(parser);
+            AstIf* iff                 = AstIf_Create();
+            iff->Statement.ParentScope = parser->ParentScope;
+            iff->If.IfToken            = Parser_ExpectToken(parser, TokenKind_If);
+            iff->If.Condition          = Parser_ParseExpression(parser);
             Parser_SetExpressionParentStatement(iff->If.Condition, iff);
             if (parser->Current.Kind == TokenKind_Do) {
                 Parser_ExpectToken(parser, TokenKind_Do);
@@ -162,9 +167,10 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
         } break;
 
         case TokenKind_While: {
-            AstWhile* whilee         = AstWhile_Create();
-            whilee->While.WhileToken = Parser_ExpectToken(parser, TokenKind_While);
-            whilee->While.Condition  = Parser_ParseExpression(parser);
+            AstWhile* whilee              = AstWhile_Create();
+            whilee->Statement.ParentScope = parser->ParentScope;
+            whilee->While.WhileToken      = Parser_ExpectToken(parser, TokenKind_While);
+            whilee->While.Condition       = Parser_ParseExpression(parser);
             Parser_SetExpressionParentStatement(whilee->While.Condition, whilee);
             if (parser->Current.Kind == TokenKind_Do) {
                 Parser_ExpectToken(parser, TokenKind_Do);
@@ -176,8 +182,9 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
         } break;
 
         case TokenKind_Return: {
-            AstReturn* returnn          = AstReturn_Create();
-            returnn->Return.ReturnToken = Parser_ExpectToken(parser, TokenKind_Return);
+            AstReturn* returnn             = AstReturn_Create();
+            returnn->Statement.ParentScope = parser->ParentScope;
+            returnn->Return.ReturnToken    = Parser_ExpectToken(parser, TokenKind_Return);
             if (parser->Current.Kind != TokenKind_Semicolon) {
                 returnn->Return.Value = Parser_ParseExpression(parser);
                 Parser_SetExpressionParentStatement(returnn->Return.Value, returnn);
@@ -192,8 +199,9 @@ AstStatement* Parser_ParseStatement(Parser* parser) {
                 free(expression);
                 return declaration;
             } else if (Token_IsAssignment(parser->Current)) {
-                AstAssignment* assignment      = AstAssignment_Create();
-                assignment->Assignment.Operand = expression;
+                AstAssignment* assignment         = AstAssignment_Create();
+                assignment->Statement.ParentScope = parser->ParentScope;
+                assignment->Assignment.Operand    = expression;
                 Parser_SetExpressionParentStatement(assignment->Assignment.Operand, assignment);
                 assignment->Assignment.EqualsToken = Parser_NextToken(parser);
                 assignment->Assignment.Value       = Parser_ParseExpression(parser);
@@ -309,6 +317,24 @@ AstExpression* Parser_ParsePrimaryExpression(Parser* parser) {
             sizeoff->SizeOf.Expression = Parser_ParseExpression(parser);
             Parser_ExpectToken(parser, TokenKind_CloseParenthesis);
             return sizeoff;
+        } break;
+
+        case TokenKind_BuiltinU8:
+        case TokenKind_BuiltinU16:
+        case TokenKind_BuiltinU32:
+        case TokenKind_BuiltinU64:
+        case TokenKind_BuiltinS8:
+        case TokenKind_BuiltinS16:
+        case TokenKind_BuiltinS32:
+        case TokenKind_BuiltinS64:
+        case TokenKind_BuiltinF32:
+        case TokenKind_BuiltinF64:
+        case TokenKind_BuiltinBool:
+        case TokenKind_BuiltinVoid:
+        case TokenKind_BuiltinType: {
+            AstBuitinType* buitinType           = AstBuitinType_Create();
+            buitinType->BuitinType.BuiltinToken = Parser_NextToken(parser);
+            return buitinType;
         } break;
 
         case TokenKind_OpenParenthesis: {

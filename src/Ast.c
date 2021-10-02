@@ -7,6 +7,7 @@ ARRAY_IMPL(AstStatement*, AstStatement);
 ARRAY_IMPL(AstDeclaration*, AstDeclaration);
 ARRAY_IMPL(AstExpression*, AstExpression);
 ARRAY_IMPL(AstType*, AstType);
+ARRAY_IMPL(AstProcedure*, AstProcedure);
 
 String AstKind_Names[AstKind_Count] = {
 #define AST_KIND(name, data)       [AstKind_##name] = String_FromLiteral(#name),
@@ -112,6 +113,10 @@ void Ast_Print(Ast* ast, uint64_t indent) {
             PrintIndent(indent + 1);
             printf("(Type: ");
             Ast_Print(ast->Declaration.Type, indent + 1);
+            printf("),\n");
+            PrintIndent(indent + 1);
+            printf("(ResolvedType: ");
+            Ast_Print(ast->Declaration.ResolvedType, indent + 1);
             printf("),\n");
             PrintIndent(indent + 1);
             printf("(Value: ");
@@ -322,8 +327,14 @@ void Ast_Print(Ast* ast, uint64_t indent) {
             printf(")");
         } break;
 
-        case AstKind_TypeType: {
+        case AstKind_BuitinType: {
             printf(",\n");
+            PrintIndent(indent + 1);
+            printf("(Name: '%.*s')", String_Fmt(TokenKind_Names[ast->BuitinType.BuiltinToken.Kind]));
+        } break;
+
+        case AstKind_InvalidType:
+        case AstKind_TypeType: {
         } break;
 
         case AstKind_TypeInteger: {
@@ -334,7 +345,8 @@ void Ast_Print(Ast* ast, uint64_t indent) {
 
         case AstKind_TypeFloat:
         case AstKind_TypeString:
-        case AstKind_TypeBool: {
+        case AstKind_TypeBool:
+        case AstKind_TypeVoid: {
         } break;
 
         case AstKind_TypeProcedure: {

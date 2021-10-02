@@ -30,7 +30,19 @@
     TOKEN_KIND(Transmute, "transmute")         \
     TOKEN_KIND(TypeOf, "typeof")               \
     TOKEN_KIND(SizeOf, "sizeof")               \
-    TOKEN_KIND(Struct, "struct")               \
+    TOKEN_KIND(BuiltinU8, "__builtin_u8")      \
+    TOKEN_KIND(BuiltinU16, "__builtin_u16")    \
+    TOKEN_KIND(BuiltinU32, "__builtin_u32")    \
+    TOKEN_KIND(BuiltinU64, "__builtin_u64")    \
+    TOKEN_KIND(BuiltinS8, "__builtin_s8")      \
+    TOKEN_KIND(BuiltinS16, "__builtin_s16")    \
+    TOKEN_KIND(BuiltinS32, "__builtin_s32")    \
+    TOKEN_KIND(BuiltinS64, "__builtin_s64")    \
+    TOKEN_KIND(BuiltinF32, "__builtin_f32")    \
+    TOKEN_KIND(BuiltinF64, "__builtin_f64")    \
+    TOKEN_KIND(BuiltinBool, "__builtin_bool")  \
+    TOKEN_KIND(BuiltinVoid, "__builtin_void")  \
+    TOKEN_KIND(BuiltinType, "__builtin_type")  \
     TOKEN_KIND_END(Keyword)                    \
                                                \
     TOKEN_KIND(Semicolon, ";")                 \

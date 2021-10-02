@@ -2,6 +2,7 @@
 #include "Strings.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "Resolver.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,6 +66,12 @@ int main(int argc, char** argv) {
     if (Parser_WasError(&parser)) {
         return EXIT_FAILURE;
     }
+
+    Resolver resolver = Resolver_Create(globalScope);
+    if (!Resolver_Resolve(&resolver)) {
+        return EXIT_FAILURE;
+    }
+    Resolver_Destroy(&resolver);
 
     Ast_Print(globalScope, 0);
     printf("\n");

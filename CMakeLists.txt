@@ -29,6 +29,8 @@ add_executable(
         src/Main.c
         src/Parser.c
         src/Parser.h
+        src/Resolver.c
+        src/Resolver.h
         src/Strings.c
         src/Strings.h
         src/Token.c

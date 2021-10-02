@@ -1,3 +1,24 @@
+// Move this to a Preload.lang
+u8 :: __builtin_u8;
+u16 :: __builtin_u16;
+u32 :: __builtin_u32;
+u64 :: __builtin_u64;
+uint :: u64;
+
+s8 :: __builtin_s8;
+s16 :: __builtin_s16;
+s32 :: __builtin_s32;
+s64 :: __builtin_s64;
+int :: s64;
+
+f32 :: __builtin_f32;
+f64 :: __builtin_f64;
+float :: f64;
+
+bool :: __builtin_bool;
+void :: __builtin_void;
+type :: __builtin_type;
+
 print_int :: (value: int) -> void #compiler_proc "print_int";
 
 factorial :: (n: int) -> int {

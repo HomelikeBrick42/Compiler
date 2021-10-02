@@ -131,9 +131,13 @@
         AstExpression* Operand;                                   \
     })                                                            \
                                                                   \
+    AST_KIND(BuitinType, { Token BuiltinToken; })                 \
+                                                                  \
     AST_KIND_END(Expression)                                      \
                                                                   \
     AST_KIND_BEGIN(Type, { uint64_t Size; })                      \
+                                                                  \
+    AST_KIND(InvalidType, {})                                     \
                                                                   \
     AST_KIND(TypeType, {})                                        \
                                                                   \
@@ -141,6 +145,7 @@
     AST_KIND(TypeFloat, {})                                       \
     AST_KIND(TypeString, {})                                      \
     AST_KIND(TypeBool, {})                                        \
+    AST_KIND(TypeVoid, {})                                        \
                                                                   \
     AST_KIND(TypeProcedure, {                                     \
         AstTypeArray Parameters;                                  \
@@ -183,6 +188,7 @@ ARRAY_DECL(AstStatement*, AstStatement);
 ARRAY_DECL(AstDeclaration*, AstDeclaration);
 ARRAY_DECL(AstExpression*, AstExpression);
 ARRAY_DECL(AstType*, AstType);
+ARRAY_DECL(AstProcedure*, AstProcedure);
 
 #define AST_KIND(name, data) typedef struct Ast##name##Data data Ast##name##Data;
 #define AST_KIND_BEGIN(name, data)
