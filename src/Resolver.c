@@ -225,6 +225,9 @@ Resolver Resolver_Create(AstScope* globalScope) {
 
 void Resolver_Destroy(Resolver* resolver) {
     AstProcedureArray_Destroy(&resolver->PendingProcedures);
+    UnaryOperatorArray_Destroy(&resolver->UnaryOperators);
+    BinaryOperatorArray_Destroy(&resolver->BinaryOperators);
+    CastArray_Destroy(&resolver->Casts);
 }
 
 bool Resolver_Resolve(Resolver* resolver) {
