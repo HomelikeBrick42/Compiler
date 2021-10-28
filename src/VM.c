@@ -64,6 +64,12 @@ bool VM_Step(VM* vm) {
         return false;
     }
 
+#define SHOW_DEBUG_INFO 0
+
+#if SHOW_DEBUG_INFO
+    printf("%05llu %s\n", vm->Ip - vm->Code, Op_Names[*vm->Ip]);
+#endif
+
     switch ((Op)*vm->Ip++) {
         default:
         case Op_Invalid: {
@@ -329,9 +335,22 @@ bool VM_Step(VM* vm) {
             uint64_t size = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);
 
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)&vm->Bp[offset]);
+            }
+#endif
+
             for (uint64_t i = 0; i < size; i++) {
                 vm->Sp[i] = vm->Bp[offset + i];
             }
+
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)vm->Sp);
+            }
+#endif
+
             vm->Sp += size;
         } break;
 
@@ -343,9 +362,22 @@ bool VM_Step(VM* vm) {
             vm->Ip += sizeof(uint64_t);
 
             vm->Sp -= size;
+
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)vm->Sp);
+            }
+#endif
+
             for (uint64_t i = 0; i < size; i++) {
                 vm->Bp[offset + i] = vm->Sp[i];
             }
+
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)&vm->Bp[offset]);
+            }
+#endif
         } break;
 
         case Op_LoadAbsolute: {
@@ -355,9 +387,22 @@ bool VM_Step(VM* vm) {
             uint64_t size = *(uint64_t*)vm->Ip;
             vm->Ip += sizeof(uint64_t);
 
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)&vm->Stack[offset]);
+            }
+#endif
+
             for (uint64_t i = 0; i < size; i++) {
                 vm->Sp[i] = vm->Stack[offset + i];
             }
+
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)vm->Sp);
+            }
+#endif
+
             vm->Sp += size;
         } break;
 
@@ -369,11 +414,35 @@ bool VM_Step(VM* vm) {
             vm->Ip += sizeof(uint64_t);
 
             vm->Sp -= size;
+
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)vm->Sp);
+            }
+#endif
+
             for (uint64_t i = 0; i < size; i++) {
                 vm->Stack[offset + i] = vm->Sp[i];
             }
+
+#if SHOW_DEBUG_INFO
+            if (size == 8) {
+                printf("Value: %llu\n", *(uint64_t*)&vm->Stack[offset]);
+            }
+#endif
         } break;
     }
+
+#if SHOW_DEBUG_INFO
+    printf("Stack: [");
+    for (uint64_t* it = (uint64_t*)vm->Stack; it < (uint64_t*)vm->Sp; it++) {
+        printf("%llu", *it);
+        if (it < (uint64_t*)vm->Sp - 1) {
+            printf(", ");
+        }
+    }
+    printf("]\n\n");
+#endif
 
     return true;
 }
@@ -390,6 +459,9 @@ void PrintBytecode(uint8_t* code, uint64_t codeSize) {
                 ip += sizeof(uint64_t);
                 ip += size;
                 printf(": Size = %llu", size);
+                if (size == 8) {
+                    printf(", Value: %llu", *(uint64_t*)(ip - size));
+                }
             } break;
 
             case Op_AllocStack:

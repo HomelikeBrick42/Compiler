@@ -259,9 +259,9 @@ bool Emitter_Test(const char* filepath) {
 
     Emitter_Emit(&emitter, file);
 
-    PrintBytecode(emitter.Code, emitter.CodeSize);
+    // PrintBytecode(emitter.Code, emitter.CodeSize);
 
-    printf("\n\n");
+    // printf("\n\n");
 
     VM vm;
     if (!VM_Create(&vm, emitter.Code, emitter.CodeSize, 1024 * 1024)) {

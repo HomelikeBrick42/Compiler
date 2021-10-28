@@ -267,6 +267,8 @@ void Emitter_EmitAst(Emitter* emitter, Ast* ast, bool constantInitialization) {
         } break;
 
         case AstKind_Struct: {
+            Emitter_EmitOp(emitter, Op_AllocStack);
+            Emitter_EmitU64(emitter, 8);
         } break;
 
         case AstKind_MemberAccess: {
