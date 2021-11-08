@@ -7,6 +7,10 @@ TokenKind :: enum {
 	Name,
 	Integer,
 
+	OpenParenthesis,
+	CloseParenthesis,
+	OpenBrace,
+	CloseBrace,
 	Colon,
 	Semicolon,
 

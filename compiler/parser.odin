@@ -5,6 +5,7 @@ import "core:fmt"
 Parser :: struct {
 	path: string,
 	lexer: Lexer,
+	previous: Token,
 	current: Token,
 }
 
@@ -17,9 +18,9 @@ Parser_Create :: proc(source: string, path: string) -> (parser: Parser, error: M
 
 @(private="file")
 Parser_NextToken :: proc(parser: ^Parser) -> (token: Token, error: Maybe(Error)) {
-	current := parser.current
+	parser.previous = parser.current
 	parser.current = Lexer_NextToken(&parser.lexer) or_return
-	return current, nil
+	return parser.previous, nil
 }
 
 @(private="file")
@@ -39,7 +40,9 @@ Parser_ParseFile :: proc(parser: ^Parser) -> (file: ^AstFile, error: Maybe(Error
 
 	for parser.current.kind != .EndOfFile {
 		statement := Parser_ParseStatement(parser) or_return
-		Parser_ExpectToken(parser, .Semicolon) or_return
+		if parser.previous.kind != .CloseBrace {
+			Parser_ExpectToken(parser, .Semicolon) or_return
+		}
 		append(&file.statements, statement)
 	}
 
@@ -49,6 +52,20 @@ Parser_ParseFile :: proc(parser: ^Parser) -> (file: ^AstFile, error: Maybe(Error
 
 Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, error: Maybe(Error)) {
 	#partial switch parser.current.kind {
+		case .OpenBrace: {
+			Parser_ExpectToken(parser, .OpenBrace) or_return
+			scope := AstStatement_Create(AstScope)
+			for parser.current.kind != .CloseBrace && parser.current.kind != .EndOfFile {
+				statement := Parser_ParseStatement(parser) or_return
+				if parser.previous.kind != .CloseBrace {
+					Parser_ExpectToken(parser, .Semicolon) or_return
+				}
+				append(&scope.statements, statement)
+			}
+			Parser_ExpectToken(parser, .CloseBrace) or_return
+			return scope, nil
+		}
+
 		case: {
 			expression := Parser_ParseExpression(parser) or_return
 			#partial switch parser.current.kind {
@@ -112,6 +129,13 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 			integer := AstExpression_Create(AstInteger)
 			integer.integer_token = Parser_ExpectToken(parser, .Integer) or_return
 			return integer, nil
+		}
+
+		case .OpenParenthesis: {
+			Parser_ExpectToken(parser, .OpenParenthesis) or_return
+			expression := Parser_ParseExpression(parser) or_return
+			Parser_ExpectToken(parser, .CloseParenthesis) or_return
+			return expression, nil
 		}
 
 		case: {

@@ -7,6 +7,10 @@ import "core:strconv"
 
 @(private="file")
 lexer_single_tokens := map[rune]TokenKind{
+	'(' = .OpenParenthesis,
+	')' = .CloseParenthesis,
+	'{' = .OpenBrace,
+	'}' = .CloseBrace,
 	':' = .Colon,
 	';' = .Semicolon,
 
