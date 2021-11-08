@@ -1,0 +1,202 @@
+package compiler
+
+import "core:fmt"
+import "core:strings"
+import "core:unicode"
+import "core:strconv"
+
+@(private="file")
+lexer_single_tokens := map[rune]TokenKind{
+	':' = .Colon,
+	';' = .Semicolon,
+
+	'+' = .Plus,
+	'-' = .Minus,
+	'*' = .Asterisk,
+	'/' = .Slash,
+	'=' = .Equals,
+}
+
+@(private="file")
+lexer_double_tokens := map[rune]struct {
+	second: rune,
+	kind: TokenKind,
+} {
+	'+' = { '=', .PlusEquals     },
+	'-' = { '=', .MinusEquals    },
+	'*' = { '=', .AsteriskEquals },
+	'/' = { '=', .SlashEquals    },
+	'=' = { '=', .EqualsEquals   },
+}
+
+Lexer :: struct {
+	using loc: SourceLoc,
+	reader:    strings.Reader,
+	current:   rune,
+}
+
+Lexer_Create :: proc(source: string, path: string) -> Lexer {
+	lexer         := Lexer{}
+	lexer.path     = path
+	lexer.source   = source
+	lexer.position = 0
+	lexer.line     = 1
+	lexer.column   = 1
+
+	strings.reader_init(&lexer.reader, lexer.source)
+
+	chr, _, err := strings.reader_read_rune(&lexer.reader)
+	if err == nil {
+		lexer.current = chr
+	} else {
+		assert(err == .EOF)
+		lexer.current = 0
+	}
+
+	return lexer
+}
+
+@(private="file")
+Lexer_NextRune :: proc(lexer: ^Lexer) -> rune {
+	current := lexer.current
+	
+	lexer.position += 1
+	lexer.column   += 1
+
+	if current == '\n' {
+		lexer.line  += 1
+		lexer.column = 1
+	}
+
+	chr, _, err := strings.reader_read_rune(&lexer.reader)
+	if err == nil {
+		lexer.current = chr
+	} else {
+		assert(err == .EOF)
+		lexer.current = 0
+	}
+
+	return current
+}
+
+Lexer_NextToken :: proc(lexer: ^Lexer) -> (token: Token, error: Maybe(Error)) {
+	for {
+		start_loc := lexer.loc
+
+		if lexer.current == 0 {
+			return Token{
+				kind   = .EndOfFile,
+				loc    = start_loc,
+				length = lexer.position - start_loc.position,
+			}, nil
+		} else if unicode.is_space(lexer.current) {
+			Lexer_NextRune(lexer)
+			continue
+		} else if unicode.is_digit(lexer.current) {
+			base := 10
+
+			if lexer.current == '0' {
+				Lexer_NextRune(lexer)
+				switch lexer.current {
+					case 'x': {
+						Lexer_NextRune(lexer)
+						base = 16
+					}
+
+					case 'd': {
+						Lexer_NextRune(lexer)
+						base = 10
+					}
+
+					case 'o': {
+						Lexer_NextRune(lexer)
+						base = 8
+					}
+
+					case 'b': {
+						Lexer_NextRune(lexer)
+						base = 2
+					}
+
+					case: {
+						base = 10
+					}
+				}
+			}
+
+			for unicode.is_digit(lexer.current) || lexer.current == '_' {
+				Lexer_NextRune(lexer)
+			}
+
+			// TODO: Parse integers without this function so we can have proper error locations
+			value, ok := strconv.parse_u64_of_base(lexer.source[start_loc.position:lexer.position], base)
+			if !ok {
+				return {}, Error{
+					loc = start_loc,
+					message = fmt.tprintf("Invalid number literal for base {}", base),
+				}
+			}
+
+			return Token{
+				kind   = .Integer,
+				loc    = start_loc,
+				length = lexer.position - start_loc.position,
+				data   = value,
+			}, nil
+		} else if unicode.is_letter(lexer.current) || lexer.current == '_' {
+			for unicode.is_letter(lexer.current) || unicode.is_digit(lexer.current) || lexer.current == '_' {
+				Lexer_NextRune(lexer)
+			}
+
+			name := lexer.source[start_loc.position:lexer.position]
+
+			return Token{
+				kind   = .Name,
+				loc    = start_loc,
+				length = lexer.position - start_loc.position,
+				data   = name,
+			}, nil
+		} else {
+			current      := lexer.current
+			already_next := false
+
+			if info, ok := lexer_double_tokens[current]; ok {
+				Lexer_NextRune(lexer)
+				already_next = true
+
+				if lexer.current == info.second {
+					Lexer_NextRune(lexer)
+					return {
+						kind   = info.kind,
+						loc    = start_loc,
+						length = lexer.position - start_loc.position,
+					}, nil
+				}
+			}
+
+			if kind, ok := lexer_single_tokens[current]; ok {
+				Lexer_NextRune(lexer)
+				already_next = true
+
+				return {
+					kind   = kind,
+					loc    = start_loc,
+					length = lexer.position - start_loc.position,
+				}, nil
+			}
+
+			if !already_next do current = Lexer_NextRune(lexer)
+			return {}, Error{
+				loc = start_loc,
+				message = fmt.tprintf("Unexpected character: '{}'", current),
+			}
+		}
+
+		message := "unreachable end of loop in Lexer_NextToken"
+		assert(false, message)
+		return {}, Error{
+			loc = start_loc,
+			message = message,
+		}
+	}
+}
