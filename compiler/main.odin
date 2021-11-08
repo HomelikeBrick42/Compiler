@@ -17,6 +17,14 @@ Error :: struct {
 	message: string,
 }
 
+Error_MaybeAbort :: proc(error: Maybe(Error)) {
+	if error != nil {
+		error := error.(Error)
+		fmt.eprintf("{}:{}:{}: {}\n", error.path, error.line, error.column, error.message)
+		os.exit(1)
+	}
+}
+
 main :: proc() {
 	// TODO: Command line input
 	/*
@@ -31,9 +39,10 @@ main :: proc() {
 	path := "test.lang"
 	bytes, ok := os.read_entire_file(path)
 	if !ok {
-		fmt.eprintf("Unable to open file {}\n", path)
-		return
+		fmt.eprintf("Unable to open file '{}'\n", path)
+		os.exit(1)
 	}
+	defer delete(bytes)
 
 	source := string(bytes)
 
@@ -57,17 +66,16 @@ main :: proc() {
 	*/
 
 	parser, error := Parser_Create(source, path)
-	if error != nil {
-		error := error.(Error)
-		fmt.eprintf("{}:{}:{}: {}\n", error.path, error.line, error.column, error.message)
-		return
-	}
+	Error_MaybeAbort(error)
 
 	file: ^AstFile
 	file, error = Parser_ParseFile(&parser)
-	if error != nil {
-		error := error.(Error)
-		fmt.eprintf("{}:{}:{}: {}\n", error.path, error.line, error.column, error.message)
-		return
-	}
+	Error_MaybeAbort(error)
+
+	binder: Binder
+	defer Binder_Destroy(&binder)
+
+	bound_file: ^BoundFile
+	bound_file, error = Binder_BindFile(&binder, file)
+	Error_MaybeAbort(error)
 }

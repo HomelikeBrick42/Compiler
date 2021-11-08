@@ -24,6 +24,7 @@ AstFile :: struct {
 AstStatement :: struct {
 	using ast: Ast,
 	statement_kind: union {
+		^AstScope,
 		^AstDeclaration,
 		^AstAssignment,
 		^AstStatementExpression,
@@ -35,6 +36,11 @@ AstStatement_Create :: proc($T: typeid) -> ^T {
 	statement.kind           = cast(^AstStatement) statement
 	statement.statement_kind = statement
 	return statement
+}
+
+AstScope :: struct {
+	using statement: AstStatement,
+	statements: [dynamic]^AstStatement,
 }
 
 AstDeclaration :: struct {
