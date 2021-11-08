@@ -1,6 +1,6 @@
 package compiler
 
-Ast :: struct {
+AstNode :: struct {
 	kind: union {
 		^AstFile,
 		^AstStatement,
@@ -8,21 +8,21 @@ Ast :: struct {
 	},
 }
 
-Ast_Create :: proc($T: typeid) -> ^T {
+AstNode_Create :: proc($T: typeid) -> ^T {
 	ast     := new(T)
 	ast.kind = ast
 	return ast
 }
 
 AstFile :: struct {
-	using ast: Ast,
+	using ast: AstNode,
 	path: string,
 	statements: [dynamic]^AstStatement,
 	end_of_file_token: Token,
 }
 
 AstStatement :: struct {
-	using ast: Ast,
+	using ast: AstNode,
 	statement_kind: union {
 		^AstScope,
 		^AstDeclaration,
@@ -65,7 +65,7 @@ AstStatementExpression :: struct {
 }
 
 AstExpression :: struct {
-	using ast: Ast,
+	using ast: AstNode,
 	expression_kind: union {
 		^AstName,
 		^AstInteger,

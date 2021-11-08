@@ -35,7 +35,7 @@ Parser_ExpectToken :: proc(parser: ^Parser, kind: TokenKind) -> (token: Token, e
 }
 
 Parser_ParseFile :: proc(parser: ^Parser) -> (file: ^AstFile, error: Maybe(Error)) {
-	file = Ast_Create(AstFile)
+	file = AstNode_Create(AstFile)
 
 	for parser.current.kind != .EndOfFile {
 		statement := Parser_ParseStatement(parser) or_return
