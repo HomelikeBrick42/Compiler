@@ -72,7 +72,7 @@ main :: proc() {
 	file, error = Parser_ParseFile(&parser)
 	Error_MaybeAbort(error)
 
-	binder: Binder
+	binder := Binder_Create()
 	defer Binder_Destroy(&binder)
 
 	bound_file: ^BoundFile

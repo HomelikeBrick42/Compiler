@@ -98,7 +98,7 @@ Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, err
 				case .Equals, .PlusEquals, .MinusEquals, .AsteriskEquals, .SlashEquals, .PercentEquals: {
 					assignment := AstStatement_Create(AstAssignment)
 					assignment.operand = expression
-					assignment.assignment_token = Parser_NextToken(parser) or_return
+					assignment.equals_token = Parser_NextToken(parser) or_return
 					assignment.value = Parser_ParseExpression(parser) or_return
 					return assignment, nil
 				}

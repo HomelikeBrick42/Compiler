@@ -45,6 +45,7 @@ BoundScope :: struct {
 	using statement: BoundStatement,
 	statements: [dynamic]^BoundStatement,
 	declarations: map[string]^BoundDeclaration,
+	stack_size: uint,
 }
 
 BoundDeclaration :: struct {
@@ -52,11 +53,13 @@ BoundDeclaration :: struct {
 	name: string,
 	type: ^BoundType,
 	value: ^BoundExpression,
+	stack_location: uint,
 }
 
 BoundAssignment :: struct {
 	using statement: BoundStatement,
 	operand: ^BoundExpression,
+	binary_operator: ^BinaryOperator, // this will be nil if = is used
 	value: ^BoundExpression,
 }
 
@@ -98,12 +101,14 @@ BoundInteger :: struct {
 
 BoundUnary :: struct {
 	using expression: BoundExpression,
+	unary_operator: ^UnaryOperator,
 	operand: ^BoundExpression,
 }
 
 BoundBinary :: struct {
 	using expression: BoundExpression,
 	left: ^BoundExpression,
+	binary_operator: ^BinaryOperator,
 	right: ^BoundExpression,
 }
 

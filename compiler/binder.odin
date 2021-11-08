@@ -4,10 +4,67 @@ import "core:fmt"
 
 Binder :: struct {
 	types: [dynamic]^BoundType,
+	unary_operators: [dynamic]^UnaryOperator,
+	binary_operators: [dynamic]^BinaryOperator,
+}
+
+Binder_Create :: proc() -> Binder {
+	binder: Binder
+
+	append(&binder.unary_operators, new_clone(UnaryOperator{
+		operator_kind = .Plus,
+		operand_type  = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	append(&binder.unary_operators, new_clone(UnaryOperator{
+		operator_kind = .Minus,
+		operand_type  = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	append(&binder.binary_operators, new_clone(BinaryOperator{
+		operator_kind = .Plus,
+		left_type     = Binder_GetIntegerType(&binder, 64, true),
+		right_type    = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	append(&binder.binary_operators, new_clone(BinaryOperator{
+		operator_kind = .Minus,
+		left_type     = Binder_GetIntegerType(&binder, 64, true),
+		right_type    = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	append(&binder.binary_operators, new_clone(BinaryOperator{
+		operator_kind = .Asterisk,
+		left_type     = Binder_GetIntegerType(&binder, 64, true),
+		right_type    = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	append(&binder.binary_operators, new_clone(BinaryOperator{
+		operator_kind = .Slash,
+		left_type     = Binder_GetIntegerType(&binder, 64, true),
+		right_type    = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	append(&binder.binary_operators, new_clone(BinaryOperator{
+		operator_kind = .Percent,
+		left_type     = Binder_GetIntegerType(&binder, 64, true),
+		right_type    = Binder_GetIntegerType(&binder, 64, true),
+		result_type   = Binder_GetIntegerType(&binder, 64, true),
+	}))
+
+	return binder
 }
 
 Binder_Destroy :: proc(binder: ^Binder) {
 	delete(binder.types)
+	delete(binder.unary_operators)
+	delete(binder.binary_operators)
 }
 
 Binder_GetIntegerType :: proc(binder: ^Binder, size: uint, signed: bool) -> ^BoundIntegerType {
@@ -72,17 +129,19 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 
 			if declaration.value != nil {
 				bound_declaration.value = Binder_BindExpression(binder, declaration.value, bound_declaration) or_return
-				if bound_declaration.type == nil {
-					bound_declaration.type = bound_declaration.value.type
-				}
 			}
 
-			if bound_declaration.type != bound_declaration.value.type {
+			if bound_declaration.type == nil {
+				bound_declaration.type = bound_declaration.value.type
+			} else if bound_declaration.type != bound_declaration.value.type {
 				return nil, Error{
 					loc     = declaration.equals_token,
 					message = "Type for declaration and the value type do not match",
 				}
 			}
+
+			bound_declaration.stack_location = parent_scope.stack_size
+			parent_scope.stack_size += bound_declaration.type.size
 
 			parent_scope.declarations[bound_declaration.name] = bound_declaration
 			return bound_declaration, nil
@@ -96,15 +155,36 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			
 			if _, ok := bound_assignment.operand.expression_kind.(^BoundName); !ok {
 				return nil, Error{
-					loc     = assignment.assignment_token.loc,
+					loc     = assignment.equals_token.loc,
 					message = "Cannot assign non names (for now)",
 				}
 			}
 
-			if bound_assignment.operand.type != bound_assignment.value.type {
+			if assignment.equals_token.kind == .Equals {
+				if bound_assignment.operand.type != bound_assignment.value.type {
+					return nil, Error{
+						loc     = assignment.equals_token.loc,
+						message = "Types for assignment do not match",
+					}
+				}
+			} 
+
+			operator_kind, found := equals_to_operator[assignment.equals_token.kind]
+			assert(found)
+
+			for operator in binder.binary_operators {
+				if operator.operator_kind == operator_kind &&
+					operator.left_type == bound_assignment.operand.type &&
+					operator.right_type == bound_assignment.value.type {
+					bound_assignment.binary_operator = operator
+					break
+				}
+			}
+
+			if operator_kind != .Equals && bound_assignment.binary_operator == nil {
 				return nil, Error{
-					loc     = assignment.assignment_token.loc,
-					message = "Types for assignment do not match",
+					loc     = assignment.equals_token.loc,
+					message = "Unable to find binary operator for types in assignment",
 				}
 			}
 
@@ -163,10 +243,24 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			unary := e
 			bound_operand := Binder_BindExpression(binder, unary.operand, parent_statement) or_return
 
-			// TODO: Proper type checking
-			type := bound_operand.type
+			unary_operator: ^UnaryOperator = nil
+			for operator in binder.unary_operators {
+				if operator.operator_kind == unary.operator_token.kind &&
+					operator.operand_type == bound_operand.type {
+					unary_operator = operator
+					break
+				}
+			}
 
-			bound_unary := BoundExpression_Create(BoundUnary, type, parent_statement)
+			if unary_operator == nil {
+				return nil, Error{
+					loc     = unary.operator_token.loc,
+					message = "Unable to find unary operator",
+				}
+			}
+
+			bound_unary := BoundExpression_Create(BoundUnary, unary_operator.result_type, parent_statement)
+			bound_unary.unary_operator = unary_operator
 			bound_unary.operand = bound_operand
 			return bound_unary, nil
 		}
@@ -176,18 +270,26 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			bound_left := Binder_BindExpression(binder, binary.left, parent_statement) or_return
 			bound_right := Binder_BindExpression(binder, binary.right, parent_statement) or_return
 
-			if bound_left.type != bound_right.type {
-				return nil, Error{
-					loc     = binary.operator_token.loc,
-					message = "Types for binary expression do not match",
+			binary_operator: ^BinaryOperator = nil
+			for operator in binder.binary_operators {
+				if operator.operator_kind == binary.operator_token.kind &&
+					operator.left_type == bound_left.type &&
+					operator.right_type == bound_right.type {
+					binary_operator = operator
+					break
 				}
 			}
 
-			// TODO: Proper type checking
-			type := bound_left.type
+			if binary_operator == nil {
+				return nil, Error{
+					loc     = binary.operator_token.loc,
+					message = "Unable to find binary operator",
+				}
+			}
 
-			bound_binary := BoundExpression_Create(BoundBinary, type, parent_statement)
+			bound_binary := BoundExpression_Create(BoundBinary, binary_operator.result_type, parent_statement)
 			bound_binary.left = bound_left
+			bound_binary.binary_operator = binary_operator
 			bound_binary.right = bound_right
 			return bound_binary, nil
 		}

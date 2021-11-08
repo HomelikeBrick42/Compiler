@@ -55,7 +55,7 @@ AstDeclaration :: struct {
 AstAssignment :: struct {
 	using assignment: AstStatement,
 	operand: ^AstExpression,
-	assignment_token: Token,
+	equals_token: Token,
 	value: ^AstExpression,
 }
 
