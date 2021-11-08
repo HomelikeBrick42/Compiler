@@ -14,7 +14,9 @@ lexer_single_tokens := map[rune]TokenKind{
 	'-' = .Minus,
 	'*' = .Asterisk,
 	'/' = .Slash,
+	'%' = .Percent,
 	'=' = .Equals,
+	'!' = .ExclamationMark,
 }
 
 @(private="file")
@@ -22,11 +24,13 @@ lexer_double_tokens := map[rune]struct {
 	second: rune,
 	kind: TokenKind,
 } {
-	'+' = { '=', .PlusEquals     },
-	'-' = { '=', .MinusEquals    },
-	'*' = { '=', .AsteriskEquals },
-	'/' = { '=', .SlashEquals    },
-	'=' = { '=', .EqualsEquals   },
+	'+' = { '=', .PlusEquals            },
+	'-' = { '=', .MinusEquals           },
+	'*' = { '=', .AsteriskEquals        },
+	'/' = { '=', .SlashEquals           },
+	'%' = { '=', .PercentEquals         },
+	'=' = { '=', .EqualsEquals          },
+	'!' = { '=', .ExclamationMarkEquals },
 }
 
 Lexer :: struct {
@@ -157,27 +161,18 @@ Lexer_NextToken :: proc(lexer: ^Lexer) -> (token: Token, error: Maybe(Error)) {
 				data   = name,
 			}, nil
 		} else {
-			current      := lexer.current
-			already_next := false
+			last := Lexer_NextRune(lexer)
 
-			if info, ok := lexer_double_tokens[current]; ok {
+			if info, ok := lexer_double_tokens[last]; ok && lexer.current == info.second {
 				Lexer_NextRune(lexer)
-				already_next = true
-
-				if lexer.current == info.second {
-					Lexer_NextRune(lexer)
-					return {
-						kind   = info.kind,
-						loc    = start_loc,
-						length = lexer.position - start_loc.position,
-					}, nil
-				}
+				return {
+					kind   = info.kind,
+					loc    = start_loc,
+					length = lexer.position - start_loc.position,
+				}, nil
 			}
 
-			if kind, ok := lexer_single_tokens[current]; ok {
-				Lexer_NextRune(lexer)
-				already_next = true
-
+			if kind, ok := lexer_single_tokens[last]; ok {
 				return {
 					kind   = kind,
 					loc    = start_loc,
@@ -185,10 +180,9 @@ Lexer_NextToken :: proc(lexer: ^Lexer) -> (token: Token, error: Maybe(Error)) {
 				}, nil
 			}
 
-			if !already_next do current = Lexer_NextRune(lexer)
 			return {}, Error{
 				loc = start_loc,
-				message = fmt.tprintf("Unexpected character: '{}'", current),
+				message = fmt.tprintf("Unexpected character: '{}'", last),
 			}
 		}
 

@@ -36,6 +36,8 @@ main :: proc() {
 	}
 
 	source := string(bytes)
+
+	/*
 	lexer := Lexer_Create(source, path)
 
 	for {
@@ -46,10 +48,26 @@ main :: proc() {
 			return
 		}
 
-		fmt.println(token.kind)
+		fmt.printf("{} '{}'\n", token.kind, token.source[token.position:token.position+token.length])
 
 		if token.kind == .EndOfFile {
 			break
 		}
+	}
+	*/
+
+	parser, error := Parser_Create(source, path)
+	if error != nil {
+		error := error.(Error)
+		fmt.eprintf("{}:{}:{}: {}\n", error.path, error.line, error.column, error.message)
+		return
+	}
+
+	file: ^AstFile
+	file, error = Parser_ParseFile(&parser)
+	if error != nil {
+		error := error.(Error)
+		fmt.eprintf("{}:{}:{}: {}\n", error.path, error.line, error.column, error.message)
+		return
 	}
 }

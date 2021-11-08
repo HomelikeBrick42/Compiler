@@ -14,13 +14,17 @@ TokenKind :: enum {
 	Minus,
 	Asterisk,
 	Slash,
+	Percent,
 	Equals,
+	ExclamationMark,
 
 	PlusEquals,
 	MinusEquals,
 	AsteriskEquals,
 	SlashEquals,
+	PercentEquals,
 	EqualsEquals,
+	ExclamationMarkEquals,
 }
 
 Token :: struct {
