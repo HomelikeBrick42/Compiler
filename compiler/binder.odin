@@ -219,6 +219,7 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			for scope != nil {
 				if declaration, found := scope.declarations[name_string]; found {
 					bound_name := BoundExpression_Create(BoundName, declaration.type, parent_statement)
+					bound_name.name = name_string
 					bound_name.declaration = declaration
 					return bound_name, nil
 				}

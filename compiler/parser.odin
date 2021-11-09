@@ -40,7 +40,7 @@ Parser_ParseFile :: proc(parser: ^Parser) -> (file: ^AstFile, error: Maybe(Error
 
 	for parser.current.kind != .EndOfFile {
 		statement := Parser_ParseStatement(parser) or_return
-		if parser.previous.kind != .CloseBrace {
+		if parser.previous.kind != .CloseBrace || parser.current.kind == .Semicolon {
 			Parser_ExpectToken(parser, .Semicolon) or_return
 		}
 		append(&file.statements, statement)
@@ -57,7 +57,7 @@ Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, err
 			scope := AstStatement_Create(AstScope)
 			for parser.current.kind != .CloseBrace && parser.current.kind != .EndOfFile {
 				statement := Parser_ParseStatement(parser) or_return
-				if parser.previous.kind != .CloseBrace {
+				if parser.previous.kind != .CloseBrace || parser.current.kind == .Semicolon {
 					Parser_ExpectToken(parser, .Semicolon) or_return
 				}
 				append(&scope.statements, statement)

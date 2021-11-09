@@ -1,5 +1,7 @@
 package compiler
 
+import "core:fmt"
+
 BoundNode :: struct {
 	kind: union {
 		^BoundFile,
@@ -91,6 +93,7 @@ BoundExpression_Create :: proc($T: typeid, type: ^BoundType, parent_statement: ^
 
 BoundName :: struct {
 	using expression: BoundExpression,
+	name: string,
 	declaration: ^BoundDeclaration,
 }
 
@@ -131,4 +134,93 @@ BoundType_Create :: proc($T: typeid, size: uint) -> ^T {
 BoundIntegerType :: struct {
 	using type: BoundType,
 	signed: bool,
+}
+
+BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
+	for _ in 0..indent {
+		fmt.print("    ")
+	}
+
+	switch n in bound_node.kind {
+		case ^BoundFile: {
+			file := n
+			for statement in file.scope.statements {
+				BoundNode_Print(statement, indent)
+				fmt.println(";")
+			}
+		}
+
+		case ^BoundStatement: {
+			statement := n
+			switch s in statement.statement_kind {
+				case ^BoundScope: {
+					scope := s
+					fmt.println("{")
+					for statement in scope.statements {
+						BoundNode_Print(statement, indent + 1)
+						fmt.println(";")
+					}
+					fmt.println("}")
+				}
+
+				case ^BoundDeclaration: {
+					declaration := s
+				}
+
+				case ^BoundAssignment: {
+					assignment := s
+				}
+
+				case ^BoundStatementExpression: {
+					statement_expression := s
+				}
+
+				case: {
+					assert(false, "unreachable BoundStatement default case in BoundNode_Print")
+				}
+			}
+		}
+
+		case ^BoundExpression: {
+			expression := n
+			switch e in expression.expression_kind {
+				case ^BoundName: {
+					name := e
+				}
+
+				case ^BoundInteger: {
+					integer := e
+				}
+
+				case ^BoundUnary: {
+					unary := e
+				}
+
+				case ^BoundBinary: {
+					binary := e
+				}
+
+				case: {
+					assert(false, "unreachable BoundExpression default case in BoundNode_Print")
+				}
+			}
+		}
+
+		case ^BoundType: {
+			type := n
+			switch t in type.type_kind {
+				case ^BoundIntegerType: {
+					integer_type := t
+				}
+
+				case: {
+					assert(false, "unreachable BoundType default case in BoundNode_Print")
+				}
+			}
+		}
+
+		case: {
+			assert(false, "unreachable BoundNode default case in BoundNode_Print")
+		}
+	}
 }

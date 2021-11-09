@@ -78,4 +78,6 @@ main :: proc() {
 	bound_file: ^BoundFile
 	bound_file, error = Binder_BindFile(&binder, file)
 	Error_MaybeAbort(error)
+
+	BoundNode_Print(bound_file, 0)
 }
