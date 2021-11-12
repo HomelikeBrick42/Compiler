@@ -24,7 +24,7 @@ lexer_single_tokens := map[rune]TokenKind{
 }
 
 @(private="file")
-lexer_double_tokens := map[rune]struct {
+lexer_double_tokens := map[rune]struct{
 	second: rune,
 	kind: TokenKind,
 } {
@@ -35,6 +35,11 @@ lexer_double_tokens := map[rune]struct {
 	'%' = { '=', .PercentEquals         },
 	'=' = { '=', .EqualsEquals          },
 	'!' = { '=', .ExclamationMarkEquals },
+}
+
+@(private="file")
+lexer_keywords := map[string]TokenKind{
+	"print" = .PrintKeyword, // This is temporary
 }
 
 Lexer :: struct {
@@ -157,6 +162,14 @@ Lexer_NextToken :: proc(lexer: ^Lexer) -> (token: Token, error: Maybe(Error)) {
 			}
 
 			name := lexer.source[start_loc.position:lexer.position]
+
+			if kind, ok := lexer_keywords[name]; ok {
+				return Token{
+					kind   = kind,
+					loc    = start_loc,
+					length = lexer.position - start_loc.position,
+				}, nil
+			}
 
 			return Token{
 				kind   = .Name,

@@ -66,6 +66,14 @@ Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, err
 			return scope, nil
 		}
 
+		// This is temporary
+		case .PrintKeyword: {
+			print := AstStatement_Create(AstPrint)
+			print.print_token = Parser_ExpectToken(parser, .PrintKeyword) or_return
+			print.expression  = Parser_ParseExpression(parser) or_return
+			return print, nil
+		}
+
 		case: {
 			expression := Parser_ParseExpression(parser) or_return
 			#partial switch parser.current.kind {

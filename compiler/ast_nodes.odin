@@ -28,6 +28,7 @@ AstStatement :: struct {
 		^AstDeclaration,
 		^AstAssignment,
 		^AstStatementExpression,
+		^AstPrint,
 	},
 }
 
@@ -61,6 +62,13 @@ AstAssignment :: struct {
 
 AstStatementExpression :: struct {
 	using statement: AstStatement,
+	expression: ^AstExpression,
+}
+
+// This is temporary
+AstPrint :: struct {
+	using statement: AstStatement,
+	print_token: Token,
 	expression: ^AstExpression,
 }
 

@@ -31,6 +31,7 @@ BoundStatement :: struct {
 		^BoundDeclaration,
 		^BoundAssignment,
 		^BoundStatementExpression,
+		^BoundPrint,
 	},
 }
 
@@ -66,6 +67,12 @@ BoundAssignment :: struct {
 }
 
 BoundStatementExpression :: struct {
+	using statement: BoundStatement,
+	expression: ^BoundExpression,
+}
+
+// This is temporary
+BoundPrint :: struct {
 	using statement: BoundStatement,
 	expression: ^BoundExpression,
 }
@@ -117,16 +124,18 @@ BoundBinary :: struct {
 
 BoundType :: struct {
 	using node: BoundNode,
+	id: uint,
 	size: uint,
 	type_kind: union {
 		^BoundIntegerType,
 	},
 }
 
-BoundType_Create :: proc($T: typeid, size: uint) -> ^T {
+BoundType_Create :: proc($T: typeid, size: uint, id: uint) -> ^T {
 	node          := new(T)
 	node.kind      = cast(^BoundType) node
 	node.type_kind = node
+	node.id        = id
 	node.size      = size
 	return node
 }
@@ -216,6 +225,12 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 				case ^BoundStatementExpression: {
 					statement_expression := s
 					BoundNode_Print(statement_expression.expression, indent)
+				}
+
+				case ^BoundPrint: {
+					print := s
+					fmt.print("print ")
+					BoundNode_Print(print.expression, indent)
 				}
 
 				case: {

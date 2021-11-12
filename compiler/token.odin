@@ -7,6 +7,8 @@ TokenKind :: enum {
 	Name,
 	Integer,
 
+	PrintKeyword, // This is temporary
+
 	OpenParenthesis,
 	CloseParenthesis,
 	OpenBrace,

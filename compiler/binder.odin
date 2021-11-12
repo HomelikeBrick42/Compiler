@@ -105,7 +105,7 @@ Binder_GetIntegerType :: proc(binder: ^Binder, size: uint, signed: bool) -> ^Bou
 		}
 	}
 
-	integer_type := BoundType_Create(BoundIntegerType, size)
+	integer_type := BoundType_Create(BoundIntegerType, size, len(binder.types))
 	integer_type.signed = signed
 	append(&binder.types, integer_type)
 	return integer_type
@@ -224,6 +224,20 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			bound_statement_expression := BoundStatement_Create(BoundStatementExpression, parent_file, parent_scope)
 			bound_statement_expression.expression = Binder_BindExpression(binder, statement_expression.expression, bound_statement_expression) or_return
 			return bound_statement_expression, nil
+		}
+
+		// This is temporary
+		case ^AstPrint: {
+			print := s
+			bound_print := BoundStatement_Create(BoundPrint, parent_file, parent_scope)
+			bound_print.expression = Binder_BindExpression(binder, print.expression, bound_print) or_return
+			if bound_print.expression.type != Binder_GetIntegerType(binder, 8, true) {
+				return {}, Error{
+					loc     = print.print_token,
+					message = "Print can only print s64 for now",
+				}
+			}
+			return bound_print, nil
 		}
 
 		case: {
