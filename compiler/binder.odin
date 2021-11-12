@@ -11,52 +11,80 @@ Binder :: struct {
 Binder_Create :: proc() -> Binder {
 	binder: Binder
 
-	append(&binder.unary_operators, new_clone(UnaryOperator{
-		operator_kind = .Plus,
-		operand_type  = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddUnary :: proc(binder: ^Binder, kind: TokenKind, operand_type: ^BoundType, result_type: ^BoundType) {
+		operator := new(UnaryOperator)
+		operator^ = UnaryOperator{
+			operator_kind = kind,
+			operand_type  = operand_type,
+			result_type   = result_type,
+		}
+		append(&binder.unary_operators, operator)
+	}
 
-	append(&binder.unary_operators, new_clone(UnaryOperator{
-		operator_kind = .Minus,
-		operand_type  = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddUnary(
+		&binder,
+		.Plus,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
 
-	append(&binder.binary_operators, new_clone(BinaryOperator{
-		operator_kind = .Plus,
-		left_type     = Binder_GetIntegerType(&binder, 64, true),
-		right_type    = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddUnary(
+		&binder,
+		.Minus,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
 
-	append(&binder.binary_operators, new_clone(BinaryOperator{
-		operator_kind = .Minus,
-		left_type     = Binder_GetIntegerType(&binder, 64, true),
-		right_type    = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddBinary :: proc(binder: ^Binder, kind: TokenKind, left_type: ^BoundType, right_type: ^BoundType, result_type: ^BoundType) {
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = kind,
+			left_type     = left_type,
+			right_type    = right_type,
+			result_type   = result_type,
+		}
+		append(&binder.binary_operators, operator)
+	}
 
-	append(&binder.binary_operators, new_clone(BinaryOperator{
-		operator_kind = .Asterisk,
-		left_type     = Binder_GetIntegerType(&binder, 64, true),
-		right_type    = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddBinary(
+		&binder,
+		.Plus,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
 
-	append(&binder.binary_operators, new_clone(BinaryOperator{
-		operator_kind = .Slash,
-		left_type     = Binder_GetIntegerType(&binder, 64, true),
-		right_type    = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddBinary(
+		&binder,
+		.Minus,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
 
-	append(&binder.binary_operators, new_clone(BinaryOperator{
-		operator_kind = .Percent,
-		left_type     = Binder_GetIntegerType(&binder, 64, true),
-		right_type    = Binder_GetIntegerType(&binder, 64, true),
-		result_type   = Binder_GetIntegerType(&binder, 64, true),
-	}))
+	AddBinary(
+		&binder,
+		.Asterisk,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
+
+	AddBinary(
+		&binder,
+		.Slash,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
+
+	AddBinary(
+		&binder,
+		.Percent,
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
 
 	return binder
 }
@@ -234,7 +262,7 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 
 		case ^AstInteger: {
 			integer := e
-			integer_type := Binder_GetIntegerType(binder, 64, true)
+			integer_type := Binder_GetIntegerType(binder, 8, true)
 			bound_integer := BoundExpression_Create(BoundInteger, integer_type, parent_statement)
 			bound_integer.value = integer.integer_token.data.(u64)
 			return bound_integer, nil
