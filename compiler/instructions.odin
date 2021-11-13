@@ -8,7 +8,6 @@ Instruction :: union {
 	InstJumpFalse,
 
 	InstAllocStack,
-	InstPushS64,
 	InstPop,
 
 	InstLoadGlobal,
@@ -16,6 +15,7 @@ Instruction :: union {
 	InstLoadLocal,
 	InstStoreLocal,
 
+	InstPushS64,
 	InstNegateS64,
 	InstAddS64,
 	InstSubS64,
@@ -30,6 +30,7 @@ Instruction :: union {
 	InstGreaterThanEqualS64,
 	InstPrintS64,
 
+	InstPushBool,
 	InstNegateBool,
 	InstAndBool,
 	InstOrBool,
@@ -45,7 +46,6 @@ InstJumpTrue  :: struct { location: uint }
 InstJumpFalse :: struct { location: uint }
 
 InstAllocStack :: struct { size: uint }
-InstPushS64    :: struct { value: i64 }
 InstPop        :: struct { size: uint }
 
 InstLoadGlobal  :: struct { offset: uint, size: uint }
@@ -53,6 +53,7 @@ InstStoreGlobal :: struct { offset: uint, size: uint }
 InstLoadLocal   :: struct { offset: uint, size: uint }
 InstStoreLocal  :: struct { offset: uint, size: uint }
 
+InstPushS64             :: struct { value: i64 }
 InstNegateS64           :: struct {}
 InstAddS64              :: struct {}
 InstSubS64              :: struct {}
@@ -67,6 +68,7 @@ InstGreaterThanS64      :: struct {}
 InstGreaterThanEqualS64 :: struct {}
 InstPrintS64            :: struct {}
 
+InstPushBool     :: struct { value: bool }
 InstNegateBool   :: struct {}
 InstAndBool      :: struct {}
 InstOrBool       :: struct {}

@@ -77,10 +77,6 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				(cast(^uintptr) &vm.sp)^ -= cast(uintptr) inst.size
 			}
 
-			case InstPushS64: {
-				VM_Push(vm, inst.value)
-			}
-
 			case InstPop: {
 				(cast(^uintptr) &vm.sp)^ += cast(uintptr) inst.size
 			}
@@ -103,6 +99,10 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 			case InstStoreLocal: {
 				copy((cast([^]u8) (cast(uintptr) vm.bp - cast(uintptr) inst.offset))[:inst.size], (cast([^]u8) (cast(uintptr) vm.sp))[:inst.size])
 				(cast(^uintptr) &vm.sp)^ += cast(uintptr) inst.size
+			}
+
+			case InstPushS64: {
+				VM_Push(vm, inst.value)
 			}
 
 			case InstNegateS64: {
@@ -179,6 +179,10 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 			case InstPrintS64: {
 				value := VM_Pop(vm, i64)
 				fmt.println(value)
+			}
+
+			case InstPushBool: {
+				VM_Push(vm, inst.value)
 			}
 
 			case InstNegateBool: {

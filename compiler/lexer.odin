@@ -49,6 +49,8 @@ lexer_keywords := map[string]TokenKind{
 	"if"    = .IfKeyword,
 	"else"  = .ElseKeyword,
 	"do"    = .DoKeyword,
+	"true"  = .TrueKeyword,
+	"false" = .FalseKeyword,
 }
 
 Lexer :: struct {

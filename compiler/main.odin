@@ -202,6 +202,16 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, InstPushS64{ cast(i64) integer.value })
 				}
 
+				case ^BoundTrue: {
+					truee := e
+					append(program, InstPushBool{ true })
+				}
+
+				case ^BoundFalse: {
+					falsee := e
+					append(program, InstPushBool{ false })
+				}
+
 				case ^BoundUnary: {
 					unary := e
 					EmitBytecode(unary.operand, program)

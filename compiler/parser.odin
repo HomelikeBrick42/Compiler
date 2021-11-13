@@ -160,6 +160,18 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 			return integer, nil
 		}
 
+		case .TrueKeyword: {
+			truee := AstExpression_Create(AstTrue)
+			truee.true_token = Parser_ExpectToken(parser, .TrueKeyword) or_return
+			return truee, nil
+		}
+
+		case .FalseKeyword: {
+			falsee := AstExpression_Create(AstFalse)
+			falsee.false_token = Parser_ExpectToken(parser, .FalseKeyword) or_return
+			return falsee, nil
+		}
+
 		case .OpenParenthesis: {
 			Parser_ExpectToken(parser, .OpenParenthesis) or_return
 			expression := Parser_ParseExpression(parser) or_return

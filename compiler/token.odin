@@ -11,6 +11,8 @@ TokenKind :: enum {
 	IfKeyword,
 	ElseKeyword,
 	DoKeyword,
+	TrueKeyword,
+	FalseKeyword,
 
 	OpenParenthesis,
 	CloseParenthesis,

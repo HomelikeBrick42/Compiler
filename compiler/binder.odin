@@ -433,6 +433,20 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			return bound_integer, nil
 		}
 
+		case ^AstTrue: {
+			truee := e
+			bool_type := Binder_GetBoolType(binder)
+			bound_true := BoundExpression_Create(BoundTrue, bool_type, parent_statement)
+			return bound_true, nil
+		}
+
+		case ^AstFalse: {
+			falsee := e
+			bool_type := Binder_GetBoolType(binder)
+			bound_false := BoundExpression_Create(BoundFalse, bool_type, parent_statement)
+			return bound_false, nil
+		}
+
 		case ^AstUnary: {
 			unary := e
 			bound_operand := Binder_BindExpression(binder, unary.operand, parent_statement) or_return

@@ -87,6 +87,8 @@ AstExpression :: struct {
 	expression_kind: union {
 		^AstName,
 		^AstInteger,
+		^AstTrue,
+		^AstFalse,
 		^AstUnary,
 		^AstBinary,
 	},
@@ -107,6 +109,16 @@ AstName :: struct {
 AstInteger :: struct {
 	using expression: AstExpression,
 	integer_token: Token,
+}
+
+AstTrue :: struct {
+	using expression: AstExpression,
+	true_token: Token,
+}
+
+AstFalse :: struct {
+	using expression: AstExpression,
+	false_token: Token,
 }
 
 AstUnary :: struct {

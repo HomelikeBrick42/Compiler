@@ -95,6 +95,8 @@ BoundExpression :: struct {
 	expression_kind: union {
 		^BoundName,
 		^BoundInteger,
+		^BoundTrue,
+		^BoundFalse,
 		^BoundUnary,
 		^BoundBinary,
 	},
@@ -118,6 +120,14 @@ BoundName :: struct {
 BoundInteger :: struct {
 	using expression: BoundExpression,
 	value: u64,
+}
+
+BoundTrue :: struct {
+	using expression: BoundExpression,
+}
+
+BoundFalse :: struct {
+	using expression: BoundExpression,
 }
 
 BoundUnary :: struct {
@@ -336,6 +346,16 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 				case ^BoundInteger: {
 					integer := e
 					fmt.print(integer.value)
+				}
+
+				case ^BoundTrue: {
+					truee := e
+					fmt.print("true")
+				}
+
+				case ^BoundFalse: {
+					falsee := e
+					fmt.print("false")
 				}
 
 				case ^BoundUnary: {
