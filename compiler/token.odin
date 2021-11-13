@@ -28,6 +28,8 @@ TokenKind :: enum {
 	ExclamationMark,
 	LessThan,
 	GreaterThan,
+	AmpersandAmpersand,
+	PipePipe,
 
 	PlusEquals,
 	MinusEquals,

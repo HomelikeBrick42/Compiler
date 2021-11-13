@@ -4,7 +4,8 @@ Instruction :: union {
 	InstExit,
 	InstNoOp,
 	InstJump,
-	InstJumpZero,
+	InstJumpTrue,
+	InstJumpFalse,
 
 	InstAllocStack,
 	InstPushS64,
@@ -27,14 +28,21 @@ Instruction :: union {
 	InstLessThanEqualS64,
 	InstGreaterThanS64,
 	InstGreaterThanEqualS64,
-
 	InstPrintS64,
+
+	InstNegateBool,
+	InstAndBool,
+	InstOrBool,
+	InstEqualBool,
+	InstNotEqualBool,
+	InstPrintBool,
 }
 
-InstExit     :: struct {}
-InstNoOp     :: struct {}
-InstJump     :: struct { location: uint }
-InstJumpZero :: struct { location: uint }
+InstExit      :: struct {}
+InstNoOp      :: struct {}
+InstJump      :: struct { location: uint }
+InstJumpTrue  :: struct { location: uint }
+InstJumpFalse :: struct { location: uint }
 
 InstAllocStack :: struct { size: uint }
 InstPushS64    :: struct { value: i64 }
@@ -57,5 +65,11 @@ InstLessThanS64         :: struct {}
 InstLessThanEqualS64    :: struct {}
 InstGreaterThanS64      :: struct {}
 InstGreaterThanEqualS64 :: struct {}
+InstPrintS64            :: struct {}
 
-InstPrintS64 :: struct {}
+InstNegateBool   :: struct {}
+InstAndBool      :: struct {}
+InstOrBool       :: struct {}
+InstEqualBool    :: struct {}
+InstNotEqualBool :: struct {}
+InstPrintBool    :: struct {}

@@ -39,6 +39,14 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
+	AddUnary(
+		&binder,
+		.ExclamationMark,
+		InstNegateBool{},
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+	)
+
 	AddBinary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, left_type: ^BoundType, right_type: ^BoundType, result_type: ^BoundType) {
 		operator := new(BinaryOperator)
 		operator^ = BinaryOperator{
@@ -156,6 +164,42 @@ Binder_Create :: proc() -> Binder {
 		InstGreaterThanEqualS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.EqualsEquals,
+		InstEqualBool{},
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.ExclamationMarkEquals,
+		InstNotEqualBool{},
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.AmpersandAmpersand,
+		InstAndBool{},
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.PipePipe,
+		InstOrBool{},
+		Binder_GetBoolType(&binder),
+		Binder_GetBoolType(&binder),
 		Binder_GetBoolType(&binder),
 	)
 

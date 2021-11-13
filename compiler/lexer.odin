@@ -39,6 +39,8 @@ lexer_double_tokens := map[rune]struct{
 	'!' = { '=', .ExclamationMarkEquals },
 	'<' = { '=', .LessThanEquals        },
 	'>' = { '=', .GreaterThanEquals     },
+	'&' = { '&', .AmpersandAmpersand    },
+	'|' = { '|', .PipePipe              },
 }
 
 @(private="file")

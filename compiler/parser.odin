@@ -180,7 +180,7 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 GetUnaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 	#partial switch kind {
 		case .Plus, .Minus, .ExclamationMark: {
-			return 4
+			return 6
 		}
 
 		case: {
@@ -193,14 +193,22 @@ GetUnaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 GetBinaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 	#partial switch kind {
 		case .Asterisk, .Slash, .Percent: {
-			return 3
+			return 5
 		}
 
 		case .Plus, .Minus: {
-			return 2
+			return 4
 		}
 
 		case .EqualsEquals, .ExclamationMarkEquals, .GreaterThan, .GreaterThanEquals, .LessThan, .LessThanEquals: {
+			return 3
+		}
+
+		case .AmpersandAmpersand: {
+			return 2
+		}
+
+		case .PipePipe: {
 			return 1
 		}
 

@@ -157,13 +157,13 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					iff := s
 					EmitBytecode(iff.condition, program)
 					jump_else_location := len(program)
-					append(program, InstJumpZero{})
+					append(program, InstJumpFalse{})
 					EmitBytecode(iff.then_statement, program)
 					jump_end_location := len(program)
 					if iff.else_statement != nil {
 						append(program, InstJump{})
 					}
-					else_jump := &program[jump_else_location].(InstJumpZero)
+					else_jump := &program[jump_else_location].(InstJumpFalse)
 					else_jump.location = len(program)
 					if iff.else_statement != nil {
 						EmitBytecode(iff.else_statement, program)

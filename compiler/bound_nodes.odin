@@ -234,6 +234,14 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 				fmt.print(">=")
 			}
 
+			case .AmpersandAmpersand: {
+				fmt.print("&&")
+			}
+
+			case .PipePipe: {
+				fmt.print("||")
+			}
+
 			case: {
 				assert(false, "unreachable assignment BiaryOperator kind in PrintBinaryOperator")
 			}

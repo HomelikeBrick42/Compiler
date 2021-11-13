@@ -53,7 +53,17 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				continue
 			}
 
-			case InstJumpZero: {
+			case InstJumpTrue: {
+				value := VM_Pop(vm, bool)
+				if value {
+					vm.ip = inst.location
+				} else {
+					vm.ip += 1
+				}
+				continue
+			}
+
+			case InstJumpFalse: {
 				value := VM_Pop(vm, bool)
 				if !value {
 					vm.ip = inst.location
@@ -168,6 +178,40 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 
 			case InstPrintS64: {
 				value := VM_Pop(vm, i64)
+				fmt.println(value)
+			}
+
+			case InstNegateBool: {
+				value := VM_Pop(vm, bool)
+				VM_Push(vm, !value)
+			}
+
+			case InstAndBool: {
+				b := VM_Pop(vm, bool)
+				a := VM_Pop(vm, bool)
+				VM_Push(vm, a && b)
+			}
+
+			case InstOrBool: {
+				b := VM_Pop(vm, bool)
+				a := VM_Pop(vm, bool)
+				VM_Push(vm, a || b)
+			}
+
+			case InstEqualBool: {
+				b := VM_Pop(vm, bool)
+				a := VM_Pop(vm, bool)
+				VM_Push(vm, a == b)
+			}
+
+			case InstNotEqualBool: {
+				b := VM_Pop(vm, bool)
+				a := VM_Pop(vm, bool)
+				VM_Push(vm, a != b)
+			}
+
+			case InstPrintBool: {
+				value := VM_Pop(vm, bool)
 				fmt.println(value)
 			}
 
