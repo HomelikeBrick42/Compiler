@@ -1,6 +1,7 @@
 package compiler
 
 import "core:fmt"
+import "core:strings"
 import "core:os"
 import "core:reflect"
 
@@ -80,7 +81,7 @@ main :: proc() {
 	bound_file, error = Binder_BindFile(&binder, file)
 	Error_MaybeAbort(error)
 
-	// BoundNode_Print(bound_file, 0)
+	// fmt.println(BoundNode_ToString(bound_file))
 
 	program: [dynamic]Instruction
 	EmitBytecode(bound_file, &program)

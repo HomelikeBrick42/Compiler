@@ -1,6 +1,7 @@
 package compiler
 
 import "core:fmt"
+import "core:strings"
 import "core:reflect"
 
 BoundNode :: struct {
@@ -171,90 +172,17 @@ BoundBoolType :: struct {
 	using type: BoundType,
 }
 
-BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
-	PrintIndent :: proc(indent: uint) {
+BoundNode_ToString :: proc(bound_node: ^BoundNode, allocator := context.allocator) -> string {
+	builder: strings.Builder
+	strings.init_builder(&builder, allocator)
+	BoundNode_Print(bound_node, 0, &builder)
+	return strings.to_string(builder)
+}
+
+BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.Builder) {
+	PrintIndent :: proc(indent: uint, builder: ^strings.Builder) {
 		for _ in 0..cast(int)indent - 1 {
-			fmt.print("    ")
-		}
-	}
-
-	PrintUnaryOperator :: proc(kind: TokenKind) {
-		#partial switch kind {
-			case .Plus: {
-				fmt.print("+")
-			}
-
-			case .Minus: {
-				fmt.print("-")
-			}
-
-			case .ExclamationMark: {
-				fmt.print("!")
-			}
-
-			case: {
-				assert(false, "unreachable UnaryOperator kind in PrintUnaryOperator")
-			}
-		}
-	}
-
-	PrintBinaryOperator :: proc(kind: TokenKind) {
-		#partial switch kind {
-			case .Plus: {
-				fmt.print("+")
-			}
-
-			case .Minus: {
-				fmt.print("-")
-			}
-
-			case .Asterisk: {
-				fmt.print("*")
-			}
-
-			case .Slash: {
-				fmt.print("/")
-			}
-
-			case .Percent: {
-				fmt.print("%")
-			}
-
-			case .EqualsEquals: {
-				fmt.print("==")
-			}
-
-			case .ExclamationMarkEquals: {
-				fmt.print("!=")
-			}
-
-			case .LessThan: {
-				fmt.print("<")
-			}
-
-			case .LessThanEquals: {
-				fmt.print("<=")
-			}
-
-			case .GreaterThan: {
-				fmt.print(">")
-			}
-
-			case .GreaterThanEquals: {
-				fmt.print(">=")
-			}
-
-			case .AmpersandAmpersand: {
-				fmt.print("&&")
-			}
-
-			case .PipePipe: {
-				fmt.print("||")
-			}
-
-			case: {
-				assert(false, "unreachable assignment BiaryOperator kind in PrintBinaryOperator")
-			}
+			strings.write_string(builder, "    ")
 		}
 	}
 
@@ -262,8 +190,8 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 		case ^BoundFile: {
 			file := n
 			for statement in file.scope.statements {
-				BoundNode_Print(statement, indent)
-				fmt.println(";")
+				BoundNode_Print(statement, indent, builder)
+				strings.write_string(builder, ";\n")
 			}
 		}
 
@@ -272,61 +200,61 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 			switch s in statement.statement_kind {
 				case ^BoundScope: {
 					scope := s
-					fmt.println("{")
+					strings.write_string(builder, "{\n")
 					for statement in scope.statements {
-						PrintIndent(indent + 1)
-						BoundNode_Print(statement, indent + 1)
-						fmt.println(";")
+						PrintIndent(indent + 1, builder)
+						BoundNode_Print(statement, indent + 1, builder)
+						strings.write_string(builder, ";\n")
 					}
-					PrintIndent(indent)
-					fmt.print("}")
+					PrintIndent(indent, builder)
+					strings.write_string(builder, "}")
 				}
 
 				case ^BoundDeclaration: {
 					declaration := s
-					fmt.printf("{}: ", declaration.name)
-					BoundNode_Print(declaration.type, indent)
+					strings.write_string(builder, fmt.tprintf("{}: ", declaration.name))
+					BoundNode_Print(declaration.type, indent, builder)
 					if declaration.value != nil {
-						fmt.print(" = ")
-						BoundNode_Print(declaration.value, indent)
+						strings.write_string(builder, " = ")
+						BoundNode_Print(declaration.value, indent, builder)
 					}
 				}
 
 				case ^BoundAssignment: {
 					assignment := s
-					BoundNode_Print(assignment.operand, indent)
-					fmt.print(" ")
+					BoundNode_Print(assignment.operand, indent, builder)
+					strings.write_string(builder, " ")
 					if assignment.binary_operator != nil {
-						PrintBinaryOperator(assignment.binary_operator.operator_kind)
+						BinaryOperator_Print(assignment.binary_operator.operator_kind, builder)
 					}
-					fmt.print("= ")
-					BoundNode_Print(assignment.value, indent)
+					strings.write_string(builder, "= ")
+					BoundNode_Print(assignment.value, indent, builder)
 				}
 
 				case ^BoundStatementExpression: {
 					statement_expression := s
-					BoundNode_Print(statement_expression.expression, indent)
+					BoundNode_Print(statement_expression.expression, indent, builder)
 				}
 
 				case ^BoundIf: {
 					iff := s
-					fmt.print("if ")
-					BoundNode_Print(iff.condition, indent)
-					fmt.print(" ")
+					strings.write_string(builder, "if ")
+					BoundNode_Print(iff.condition, indent, builder)
+					strings.write_string(builder, " ")
 					if reflect.union_variant_typeid(iff.then_statement.statement_kind) != ^BoundScope {
-						fmt.print("do ")
+						strings.write_string(builder, "do ")
 					}
-					BoundNode_Print(iff.then_statement, indent)
+					BoundNode_Print(iff.then_statement, indent, builder)
 					if iff.else_statement != nil {
-						fmt.print(" else ")
-						BoundNode_Print(iff.else_statement, indent)
+						strings.write_string(builder, " else ")
+						BoundNode_Print(iff.else_statement, indent, builder)
 					}
 				}
 
 				case ^BoundPrint: {
 					print := s
-					fmt.print("print ")
-					BoundNode_Print(print.expression, indent)
+					strings.write_string(builder, "print ")
+					BoundNode_Print(print.expression, indent, builder)
 				}
 
 				case: {
@@ -340,41 +268,41 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 			switch e in expression.expression_kind {
 				case ^BoundName: {
 					name := e
-					fmt.print(name.name)
+					strings.write_string(builder, fmt.tprint(name.name))
 				}
 
 				case ^BoundInteger: {
 					integer := e
-					fmt.print(integer.value)
+					strings.write_string(builder, fmt.tprint(integer.value))
 				}
 
 				case ^BoundTrue: {
 					truee := e
-					fmt.print("true")
+					strings.write_string(builder, "true")
 				}
 
 				case ^BoundFalse: {
 					falsee := e
-					fmt.print("false")
+					strings.write_string(builder, "false")
 				}
 
 				case ^BoundUnary: {
 					unary := e
-					fmt.print("(")
-					PrintUnaryOperator(unary.unary_operator.operator_kind)
-					BoundNode_Print(unary.operand, indent)
-					fmt.print(")")
+					strings.write_string(builder, "(")
+					UnaryOperator_Print(unary.unary_operator.operator_kind, builder)
+					BoundNode_Print(unary.operand, indent, builder)
+					strings.write_string(builder, ")")
 				}
 
 				case ^BoundBinary: {
 					binary := e
-					fmt.print("(")
-					BoundNode_Print(binary.left, indent)
-					fmt.print(" ")
-					PrintBinaryOperator(binary.binary_operator.operator_kind)
-					fmt.print(" ")
-					BoundNode_Print(binary.right, indent)
-					fmt.print(")")
+					strings.write_string(builder, "(")
+					BoundNode_Print(binary.left, indent, builder)
+					strings.write_string(builder, " ")
+					BinaryOperator_Print(binary.binary_operator.operator_kind, builder)
+					strings.write_string(builder, " ")
+					BoundNode_Print(binary.right, indent, builder)
+					strings.write_string(builder, ")")
 				}
 
 				case: {
@@ -388,12 +316,12 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 			switch t in type.type_kind {
 				case ^BoundIntegerType: {
 					integer_type := t
-					fmt.printf("{}{}", integer_type.signed ? "s" : "u", integer_type.size * 8)
+					strings.write_string(builder, fmt.tprintf("{}{}", integer_type.signed ? "s" : "u", integer_type.size * 8))
 				}
 
 				case ^BoundBoolType: {
 					bool_type := t
-					fmt.print("bool")
+					strings.write_string(builder, "bool")
 				}
 
 				case: {

@@ -298,7 +298,11 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			} else if bound_declaration.type != bound_declaration.value.type {
 				return nil, Error{
 					loc     = declaration.equals_token,
-					message = "Type for declaration and the value type do not match",
+					message = fmt.tprintf(
+						"Cannot assign type '{}' to type '{}'",
+						BoundNode_ToString(bound_declaration.value.type, context.temp_allocator),
+						BoundNode_ToString(bound_declaration.type, context.temp_allocator),
+					),
 				}
 			}
 
@@ -326,7 +330,11 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 				if bound_assignment.operand.type != bound_assignment.value.type {
 					return nil, Error{
 						loc     = assignment.equals_token.loc,
-						message = "Types for assignment do not match",
+						message = fmt.tprintf(
+							"Cannot assign type '{}' to type '{}'",
+							BoundNode_ToString(bound_assignment.value.type, context.temp_allocator),
+							BoundNode_ToString(bound_assignment.operand.type, context.temp_allocator),
+						),
 					}
 				}
 			} 
@@ -346,7 +354,12 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			if operator_kind != .Equals && bound_assignment.binary_operator == nil {
 				return nil, Error{
 					loc     = assignment.equals_token.loc,
-					message = "Unable to find binary operator for types in assignment",
+					message = fmt.tprintf(
+						"Cannot find binary operator '{}' for types '{}' and '{}'",
+						BinaryOperator_ToString(operator_kind, context.temp_allocator),
+						BoundNode_ToString(bound_assignment.operand.type, context.temp_allocator),
+						BoundNode_ToString(bound_assignment.value.type, context.temp_allocator),
+					),
 				}
 			}
 
@@ -367,7 +380,10 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			if bound_if.condition.type != Binder_GetBoolType(binder) {
 				return {}, Error{
 					loc     = iff.if_token.loc,
-					message = "if condition needs a bool type",
+					message = fmt.tprintf(
+						"Cannot use type '{}' in if condition",
+						BoundNode_ToString(bound_if.condition, context.temp_allocator),
+					),
 				}
 			}
 			bound_if.then_statement = Binder_BindStatement(binder, iff.then_statement, parent_file, parent_scope) or_return
@@ -385,7 +401,10 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			if bound_print.expression.type != Binder_GetIntegerType(binder, 8, true) {
 				return {}, Error{
 					loc     = print.print_token,
-					message = "Print can only print s64 for now",
+					message = fmt.tprintf(
+						"Cannot print type '{}'",
+						BoundNode_ToString(bound_print.expression.type, context.temp_allocator),
+					),
 				}
 			}
 			return bound_print, nil
@@ -463,7 +482,11 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			if unary_operator == nil {
 				return nil, Error{
 					loc     = unary.operator_token.loc,
-					message = "Unable to find unary operator",
+					message = fmt.tprintf(
+						"Cannot find unary operator '{}' for type '{}'",
+						BinaryOperator_ToString(unary.operator_token.kind, context.temp_allocator),
+						BoundNode_ToString(bound_operand.type, context.temp_allocator),
+					),
 				}
 			}
 
@@ -491,7 +514,12 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			if binary_operator == nil {
 				return nil, Error{
 					loc     = binary.operator_token.loc,
-					message = "Unable to find binary operator",
+					message = fmt.tprintf(
+						"Cannot find binary operator '{}' for types '{}' and '{}'",
+						BinaryOperator_ToString(binary.operator_token.kind, context.temp_allocator),
+						BoundNode_ToString(bound_left.type, context.temp_allocator),
+						BoundNode_ToString(bound_right.type, context.temp_allocator),
+					),
 				}
 			}
 
