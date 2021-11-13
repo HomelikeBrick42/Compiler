@@ -87,6 +87,19 @@ Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, err
 			return iff, nil
 		}
 
+		case .WhileKeyword: {
+			whilee := AstStatement_Create(AstWhile)
+			whilee.while_token = Parser_ExpectToken(parser, .WhileKeyword) or_return
+			whilee.condition = Parser_ParseExpression(parser) or_return
+			if parser.current.kind == .DoKeyword {
+				Parser_ExpectToken(parser, .DoKeyword) or_return
+				whilee.then_statement = Parser_ParseStatement(parser) or_return
+			} else {
+				whilee.then_statement = Parser_ParseScope(parser) or_return
+			}
+			return whilee, nil
+		}
+
 		// This is temporary
 		case .PrintKeyword: {
 			print := AstStatement_Create(AstPrint)

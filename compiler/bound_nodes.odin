@@ -34,6 +34,7 @@ BoundStatement :: struct {
 		^BoundAssignment,
 		^BoundStatementExpression,
 		^BoundIf,
+		^BoundWhile,
 		^BoundPrint,
 	},
 }
@@ -81,6 +82,12 @@ BoundIf :: struct {
 	condition: ^BoundExpression,
 	then_statement: ^BoundStatement,
 	else_statement: ^BoundStatement,
+}
+
+BoundWhile :: struct {
+	using statement: BoundStatement,
+	condition: ^BoundExpression,
+	then_statement: ^BoundStatement,
 }
 
 // This is temporary
@@ -249,6 +256,17 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 						strings.write_string(builder, " else ")
 						BoundNode_Print(iff.else_statement, indent, builder)
 					}
+				}
+
+				case ^BoundWhile: {
+					whilee := s
+					strings.write_string(builder, "while ")
+					BoundNode_Print(whilee.condition, indent, builder)
+					strings.write_string(builder, " ")
+					if reflect.union_variant_typeid(whilee.then_statement.statement_kind) != ^BoundScope {
+						strings.write_string(builder, "do ")
+					}
+					BoundNode_Print(whilee.then_statement, indent, builder)
 				}
 
 				case ^BoundPrint: {

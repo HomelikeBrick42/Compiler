@@ -207,6 +207,18 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					}
 				}
 
+				case ^BoundWhile: {
+					whilee := s
+					jump_start_location := len(program)
+					EmitBytecode(whilee.condition, program)
+					jump_end_location := len(program)
+					append(program, InstJumpFalse{})
+					EmitBytecode(whilee.then_statement, program)
+					append(program, InstJump{ cast(uint) jump_start_location })
+					start_jump := &program[jump_end_location].(InstJumpFalse)
+					start_jump.location = len(program)
+				}
+
 				case ^BoundPrint: {
 					print := s
 					EmitBytecode(print.expression, program)

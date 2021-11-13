@@ -13,6 +13,7 @@ TokenKind :: enum {
 	DoKeyword,
 	TrueKeyword,
 	FalseKeyword,
+	WhileKeyword,
 
 	OpenParenthesis,
 	CloseParenthesis,

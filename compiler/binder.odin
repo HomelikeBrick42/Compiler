@@ -382,7 +382,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 					loc     = iff.if_token.loc,
 					message = fmt.tprintf(
 						"Cannot use type '{}' in if condition",
-						BoundNode_ToString(bound_if.condition, context.temp_allocator),
+						BoundNode_ToString(bound_if.condition.type, context.temp_allocator),
 					),
 				}
 			}
@@ -391,6 +391,23 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 				bound_if.else_statement = Binder_BindStatement(binder, iff.else_statement, parent_file, parent_scope) or_return
 			}
 			return bound_if, nil
+		}
+
+		case ^AstWhile: {
+			whilee := s
+			bound_while := BoundStatement_Create(BoundWhile, parent_file, parent_scope)
+			bound_while.condition = Binder_BindExpression(binder, whilee.condition, bound_while) or_return
+			if bound_while.condition.type != Binder_GetBoolType(binder) {
+				return {}, Error{
+					loc     = whilee.while_token.loc,
+					message = fmt.tprintf(
+						"Cannot use type '{}' in while condition",
+						BoundNode_ToString(bound_while.condition.type, context.temp_allocator),
+					),
+				}
+			}
+			bound_while.then_statement = Binder_BindStatement(binder, whilee.then_statement, parent_file, parent_scope) or_return
+			return bound_while, nil
 		}
 
 		// This is temporary

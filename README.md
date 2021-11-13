@@ -3,7 +3,7 @@
 ## TODOs
 
 - [x] if-else
-- [ ] loops
+- [x] loops
 - [ ] explicit types
 - [ ] arrays
 - [ ] constants

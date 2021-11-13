@@ -51,6 +51,7 @@ lexer_keywords := map[string]TokenKind{
 	"do"    = .DoKeyword,
 	"true"  = .TrueKeyword,
 	"false" = .FalseKeyword,
+	"while" = .WhileKeyword,
 }
 
 Lexer :: struct {
