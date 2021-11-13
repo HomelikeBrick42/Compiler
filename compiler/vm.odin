@@ -1,6 +1,7 @@
 package compiler
 
 import "core:fmt"
+import "core:mem"
 
 VM :: struct {
 	program: []Instruction,
@@ -81,24 +82,24 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				(cast(^uintptr) &vm.sp)^ += cast(uintptr) inst.size
 			}
 
-			case InstLoadGlobal: {
-				(cast(^uintptr) &vm.sp)^ -= cast(uintptr) inst.size
-				copy((cast([^]u8) (cast(uintptr) vm.sp))[:inst.size], (cast([^]u8) (cast(uintptr) vm.sb - cast(uintptr) inst.offset))[:inst.size])
+			case InstLoadGlobalPtr: {
+				VM_Push(vm, cast(uintptr) vm.sb - cast(uintptr) inst.offset)
 			}
 
-			case InstStoreGlobal: {
-				copy((cast([^]u8) (cast(uintptr) vm.sb - cast(uintptr) inst.offset))[:inst.size], (cast([^]u8) (cast(uintptr) vm.sp))[:inst.size])
+			case InstLoadLocalPtr: {
+				VM_Push(vm, cast(uintptr) vm.bp - cast(uintptr) inst.offset)
+			}
+
+			case InstStorePtr: {
+				ptr := VM_Pop(vm, rawptr)
+				mem.copy(ptr, vm.sp, cast(int) inst.size)
 				(cast(^uintptr) &vm.sp)^ += cast(uintptr) inst.size
 			}
 
-			case InstLoadLocal: {
+			case InstLoadPtr: {
+				ptr := VM_Pop(vm, rawptr)
 				(cast(^uintptr) &vm.sp)^ -= cast(uintptr) inst.size
-				copy((cast([^]u8) (cast(uintptr) vm.sp))[:inst.size], (cast([^]u8) (cast(uintptr) vm.bp - cast(uintptr) inst.offset))[:inst.size])
-			}
-
-			case InstStoreLocal: {
-				copy((cast([^]u8) (cast(uintptr) vm.bp - cast(uintptr) inst.offset))[:inst.size], (cast([^]u8) (cast(uintptr) vm.sp))[:inst.size])
-				(cast(^uintptr) &vm.sp)^ += cast(uintptr) inst.size
+				mem.copy(vm.sp, ptr, cast(int) inst.size)
 			}
 
 			case InstPushS64: {
@@ -216,6 +217,27 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 
 			case InstPrintBool: {
 				value := VM_Pop(vm, bool)
+				fmt.println(value)
+			}
+
+			case InstPushPtr: {
+				VM_Push(vm, inst.value)
+			}
+
+			case InstAddPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a + b)
+			}
+
+			case InstSubPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a - b)
+			}
+
+			case InstPrintPtr: {
+				value := VM_Pop(vm, rawptr)
 				fmt.println(value)
 			}
 

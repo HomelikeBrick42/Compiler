@@ -94,6 +94,50 @@ main :: proc() {
 	}
 }
 
+EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
+	#partial switch n in node.kind {
+		case ^BoundStatement: {
+			statement := n
+			#partial switch s in statement.statement_kind {
+				case ^BoundDeclaration: {
+					declaration := s
+					if declaration.global {
+						append(program, InstLoadGlobalPtr{ declaration.stack_location })
+					} else {
+						append(program, InstLoadLocalPtr{ declaration.stack_location })
+					}
+				}
+
+				case: {
+					assert(false, "unreachable BoundStatement default case in EmitPtr")
+				}
+			}
+		}
+
+		case ^BoundExpression: {
+			expression := n
+			#partial switch e in expression.expression_kind {
+				case ^BoundName: {
+					name := e
+					if name.declaration.global {
+						append(program, InstLoadGlobalPtr{ name.declaration.stack_location })
+					} else {
+						append(program, InstLoadLocalPtr{ name.declaration.stack_location })
+					}
+				}
+
+				case: {
+					assert(false, "unreachable BoundExpression default case in EmitPtr")
+				}
+			}
+		}
+
+		case: {
+			assert(false, "unreachable BoundNode default case in EmitPtr")
+		}
+	}
+}
+
 EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 	switch n in node.kind {
 		case ^BoundFile: {
@@ -118,33 +162,23 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					declaration := s
 					if declaration.value != nil {
 						EmitBytecode(declaration.value, program)
-						if declaration.global {
-							append(program, InstStoreGlobal{ declaration.stack_location, declaration.type.size })
-						} else {
-							append(program, InstStoreLocal{ declaration.stack_location, declaration.type.size })
-						}
+						EmitPtr(declaration, program)
+						append(program, InstStorePtr{ declaration.type.size })
 					}
 				}
 
 				case ^BoundAssignment: {
 					assignment := s
-					name := assignment.operand.expression_kind.(^BoundName)
 					if assignment.binary_operator != nil {
-						if name.declaration.global {
-							append(program, InstLoadGlobal{ name.declaration.stack_location, name.type.size })
-						} else {
-							append(program, InstLoadLocal{ name.declaration.stack_location, name.type.size })
-						}
+						EmitPtr(assignment.operand, program)
+						append(program, InstLoadPtr{ assignment.operand.type.size })
 					}
 					EmitBytecode(assignment.value, program)
 					if assignment.binary_operator != nil {
 						append(program, assignment.binary_operator.operation)
 					}
-					if name.declaration.global {
-						append(program, InstStoreGlobal{ name.declaration.stack_location, name.type.size })
-					} else {
-						append(program, InstStoreLocal{ name.declaration.stack_location, name.type.size })
-					}
+					EmitPtr(assignment.operand, program)
+					append(program, InstStorePtr{ assignment.operand.type.size })
 				}
 
 				case ^BoundStatementExpression: {
@@ -190,11 +224,8 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 			switch e in expression.expression_kind {
 				case ^BoundName: {
 					name := e
-					if name.declaration.global {
-						append(program, InstLoadGlobal{ name.declaration.stack_location, name.type.size })
-					} else {
-						append(program, InstLoadLocal{ name.declaration.stack_location, name.type.size })
-					}
+					EmitPtr(name, program)
+					append(program, InstLoadPtr{ name.type.size })
 				}
 
 				case ^BoundInteger: {

@@ -10,10 +10,10 @@ Instruction :: union {
 	InstAllocStack,
 	InstPop,
 
-	InstLoadGlobal,
-	InstStoreGlobal,
-	InstLoadLocal,
-	InstStoreLocal,
+	InstLoadGlobalPtr,
+	InstLoadLocalPtr,
+	InstLoadPtr,
+	InstStorePtr,
 
 	InstPushS64,
 	InstNegateS64,
@@ -37,6 +37,11 @@ Instruction :: union {
 	InstEqualBool,
 	InstNotEqualBool,
 	InstPrintBool,
+
+	InstPushPtr,
+	InstAddPtr,
+	InstSubPtr,
+	InstPrintPtr,
 }
 
 InstExit      :: struct {}
@@ -48,10 +53,10 @@ InstJumpFalse :: struct { location: uint }
 InstAllocStack :: struct { size: uint }
 InstPop        :: struct { size: uint }
 
-InstLoadGlobal  :: struct { offset: uint, size: uint }
-InstStoreGlobal :: struct { offset: uint, size: uint }
-InstLoadLocal   :: struct { offset: uint, size: uint }
-InstStoreLocal  :: struct { offset: uint, size: uint }
+InstLoadGlobalPtr  :: struct { offset: uint }
+InstLoadLocalPtr   :: struct { offset: uint }
+InstLoadPtr        :: struct { size: uint }
+InstStorePtr       :: struct { size: uint }
 
 InstPushS64             :: struct { value: i64 }
 InstNegateS64           :: struct {}
@@ -75,3 +80,8 @@ InstOrBool       :: struct {}
 InstEqualBool    :: struct {}
 InstNotEqualBool :: struct {}
 InstPrintBool    :: struct {}
+
+InstPushPtr      :: struct { value: uintptr }
+InstAddPtr       :: struct {}
+InstSubPtr       :: struct {}
+InstPrintPtr     :: struct {}
