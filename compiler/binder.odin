@@ -255,6 +255,79 @@ Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundF
 	return bound_file, nil
 }
 
+Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_file: ^BoundFile, parent_scope: ^BoundScope) -> (type: ^BoundType, error: Maybe(Error)) {
+	switch e in expression.expression_kind {
+		case ^AstName: {
+			name := e
+			name_string := name.name_token.data.(string)
+			switch name_string {
+				case "s64": {
+					return Binder_GetIntegerType(binder, 8, true), nil
+				}
+
+				case "bool": {
+					return Binder_GetBoolType(binder), nil
+				}
+
+				case: {
+					return nil, Error{
+						loc     = name.name_token.loc,
+						message = fmt.tprintf("'{}' does not name a type", name_string),
+					}
+				}
+			}
+		}
+
+		case ^AstInteger: {
+			integer := e
+			return nil, Error{
+				loc     = integer.integer_token.loc,
+				message = "Cannot convert integer to type",
+			}
+		}
+
+		case ^AstTrue: {
+			truee := e
+			return nil, Error{
+				loc     = truee.true_token.loc,
+				message = "Cannot convert boolean literal to type",
+			}
+		}
+
+		case ^AstFalse: {
+			falsee := e
+			return nil, Error{
+				loc     = falsee.false_token.loc,
+				message = "Cannot convert boolean literal to type",
+			}
+		}
+
+		case ^AstUnary: {
+			unary := e
+			return nil, Error{
+				loc     = unary.operator_token.loc,
+				message = "Cannot convert unary expression to type",
+			}
+		}
+
+		case ^AstBinary: {
+			binary := e
+			return nil, Error{
+				loc     = binary.operator_token.loc,
+				message = "Cannot convert binary expression to type",
+			}
+		}
+
+		case: {
+			message := "unreachable default case in Binder_BindAsType"
+			assert(false, message)
+			return nil, Error{
+				message = message,
+			}
+		}
+	}
+}
+
 Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_file: ^BoundFile, parent_scope: ^BoundScope) -> (bound_statement: ^BoundStatement, error: Maybe(Error)) {
 	switch s in statement.statement_kind {
 		case ^AstScope: {
@@ -283,10 +356,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			}
 
 			if declaration.type != nil {
-				return nil, Error{
-					loc     = declaration.colon_token,
-					message = "unimplemented type handling for declaration",
-				}
+				bound_declaration.type = Binder_BindAsType(binder, declaration.type, parent_file, parent_scope) or_return
 			}
 
 			if declaration.value != nil {

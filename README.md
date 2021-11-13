@@ -4,7 +4,7 @@
 
 - [x] if-else
 - [x] loops
-- [ ] explicit types
+- [x] explicit types
 - [ ] arrays
 - [ ] constants
 
