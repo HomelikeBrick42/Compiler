@@ -11,10 +11,11 @@ Binder :: struct {
 Binder_Create :: proc() -> Binder {
 	binder: Binder
 
-	AddUnary :: proc(binder: ^Binder, kind: TokenKind, operand_type: ^BoundType, result_type: ^BoundType) {
+	AddUnary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, operand_type: ^BoundType, result_type: ^BoundType) {
 		operator := new(UnaryOperator)
 		operator^ = UnaryOperator{
 			operator_kind = kind,
+			operation     = operation,
 			operand_type  = operand_type,
 			result_type   = result_type,
 		}
@@ -24,6 +25,7 @@ Binder_Create :: proc() -> Binder {
 	AddUnary(
 		&binder,
 		.Plus,
+		InstNoOp{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 	)
@@ -31,14 +33,16 @@ Binder_Create :: proc() -> Binder {
 	AddUnary(
 		&binder,
 		.Minus,
+		InstNegateS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary :: proc(binder: ^Binder, kind: TokenKind, left_type: ^BoundType, right_type: ^BoundType, result_type: ^BoundType) {
+	AddBinary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, left_type: ^BoundType, right_type: ^BoundType, result_type: ^BoundType) {
 		operator := new(BinaryOperator)
 		operator^ = BinaryOperator{
 			operator_kind = kind,
+			operation     = operation,
 			left_type     = left_type,
 			right_type    = right_type,
 			result_type   = result_type,
@@ -49,6 +53,7 @@ Binder_Create :: proc() -> Binder {
 	AddBinary(
 		&binder,
 		.Plus,
+		InstAddS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
@@ -57,6 +62,7 @@ Binder_Create :: proc() -> Binder {
 	AddBinary(
 		&binder,
 		.Minus,
+		InstSubS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
@@ -65,6 +71,7 @@ Binder_Create :: proc() -> Binder {
 	AddBinary(
 		&binder,
 		.Asterisk,
+		InstMulS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
@@ -73,6 +80,7 @@ Binder_Create :: proc() -> Binder {
 	AddBinary(
 		&binder,
 		.Slash,
+		InstDivS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
@@ -81,6 +89,7 @@ Binder_Create :: proc() -> Binder {
 	AddBinary(
 		&binder,
 		.Percent,
+		InstModS64{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 8, true),
@@ -114,6 +123,7 @@ Binder_GetIntegerType :: proc(binder: ^Binder, size: uint, signed: bool) -> ^Bou
 Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundFile, error: Maybe(Error)) {
 	bound_file = BoundNode_Create(BoundFile)
 	bound_file.scope = BoundStatement_Create(BoundScope, bound_file, nil)
+	bound_file.scope.global = true
 
 	for statement in file.statements {
 		append(&bound_file.scope.statements, Binder_BindStatement(binder, statement, bound_file, bound_file.scope) or_return)
@@ -138,6 +148,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 		case ^AstDeclaration: {
 			declaration := s
 			bound_declaration := BoundStatement_Create(BoundDeclaration, parent_file, parent_scope)
+			bound_declaration.global = parent_scope.global
 
 			bound_declaration.name = declaration.name.name_token.data.(string)
 
