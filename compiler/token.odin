@@ -8,6 +8,9 @@ TokenKind :: enum {
 	Integer,
 
 	PrintKeyword, // This is temporary
+	IfKeyword,
+	ElseKeyword,
+	DoKeyword,
 
 	OpenParenthesis,
 	CloseParenthesis,
@@ -23,6 +26,8 @@ TokenKind :: enum {
 	Percent,
 	Equals,
 	ExclamationMark,
+	LessThan,
+	GreaterThan,
 
 	PlusEquals,
 	MinusEquals,
@@ -31,6 +36,8 @@ TokenKind :: enum {
 	PercentEquals,
 	EqualsEquals,
 	ExclamationMarkEquals,
+	LessThanEquals,
+	GreaterThanEquals,
 }
 
 Token :: struct {

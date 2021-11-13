@@ -28,6 +28,7 @@ AstStatement :: struct {
 		^AstDeclaration,
 		^AstAssignment,
 		^AstStatementExpression,
+		^AstIf,
 		^AstPrint,
 	},
 }
@@ -63,6 +64,15 @@ AstAssignment :: struct {
 AstStatementExpression :: struct {
 	using statement: AstStatement,
 	expression: ^AstExpression,
+}
+
+AstIf :: struct {
+	using statement: AstStatement,
+	if_token: Token,
+	condition: ^AstExpression,
+	then_statement: ^AstStatement,
+	else_token: Token,
+	else_statement: ^AstStatement,
 }
 
 // This is temporary

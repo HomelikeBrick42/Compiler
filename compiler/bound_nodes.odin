@@ -1,6 +1,7 @@
 package compiler
 
 import "core:fmt"
+import "core:reflect"
 
 BoundNode :: struct {
 	kind: union {
@@ -31,6 +32,7 @@ BoundStatement :: struct {
 		^BoundDeclaration,
 		^BoundAssignment,
 		^BoundStatementExpression,
+		^BoundIf,
 		^BoundPrint,
 	},
 }
@@ -71,6 +73,13 @@ BoundAssignment :: struct {
 BoundStatementExpression :: struct {
 	using statement: BoundStatement,
 	expression: ^BoundExpression,
+}
+
+BoundIf :: struct {
+	using statement: BoundStatement,
+	condition: ^BoundExpression,
+	then_statement: ^BoundStatement,
+	else_statement: ^BoundStatement,
 }
 
 // This is temporary
@@ -130,6 +139,7 @@ BoundType :: struct {
 	size: uint,
 	type_kind: union {
 		^BoundIntegerType,
+		^BoundBoolType,
 	},
 }
 
@@ -147,10 +157,86 @@ BoundIntegerType :: struct {
 	signed: bool,
 }
 
+BoundBoolType :: struct {
+	using type: BoundType,
+}
+
 BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 	PrintIndent :: proc(indent: uint) {
 		for _ in 0..cast(int)indent - 1 {
 			fmt.print("    ")
+		}
+	}
+
+	PrintUnaryOperator :: proc(kind: TokenKind) {
+		#partial switch kind {
+			case .Plus: {
+				fmt.print("+")
+			}
+
+			case .Minus: {
+				fmt.print("-")
+			}
+
+			case .ExclamationMark: {
+				fmt.print("!")
+			}
+
+			case: {
+				assert(false, "unreachable UnaryOperator kind in PrintUnaryOperator")
+			}
+		}
+	}
+
+	PrintBinaryOperator :: proc(kind: TokenKind) {
+		#partial switch kind {
+			case .Plus: {
+				fmt.print("+")
+			}
+
+			case .Minus: {
+				fmt.print("-")
+			}
+
+			case .Asterisk: {
+				fmt.print("*")
+			}
+
+			case .Slash: {
+				fmt.print("/")
+			}
+
+			case .Percent: {
+				fmt.print("%")
+			}
+
+			case .EqualsEquals: {
+				fmt.print("==")
+			}
+
+			case .ExclamationMarkEquals: {
+				fmt.print("!=")
+			}
+
+			case .LessThan: {
+				fmt.print("<")
+			}
+
+			case .LessThanEquals: {
+				fmt.print("<=")
+			}
+
+			case .GreaterThan: {
+				fmt.print(">")
+			}
+
+			case .GreaterThanEquals: {
+				fmt.print(">=")
+			}
+
+			case: {
+				assert(false, "unreachable assignment BiaryOperator kind in PrintBinaryOperator")
+			}
 		}
 	}
 
@@ -168,7 +254,6 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 			switch s in statement.statement_kind {
 				case ^BoundScope: {
 					scope := s
-					PrintIndent(indent)
 					fmt.println("{")
 					for statement in scope.statements {
 						PrintIndent(indent + 1)
@@ -194,31 +279,7 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 					BoundNode_Print(assignment.operand, indent)
 					fmt.print(" ")
 					if assignment.binary_operator != nil {
-						#partial switch assignment.binary_operator.operator_kind {
-							case .Plus: {
-								fmt.print("+")
-							}
-
-							case .Minus: {
-								fmt.print("-")
-							}
-
-							case .Asterisk: {
-								fmt.print("*")
-							}
-
-							case .Slash: {
-								fmt.print("/")
-							}
-
-							case .Percent: {
-								fmt.print("%")
-							}
-
-							case: {
-								assert(false, "unreachable assignment BiaryOperator kind in BoundNode_Print")
-							}
-						}
+						PrintBinaryOperator(assignment.binary_operator.operator_kind)
 					}
 					fmt.print("= ")
 					BoundNode_Print(assignment.value, indent)
@@ -227,6 +288,21 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 				case ^BoundStatementExpression: {
 					statement_expression := s
 					BoundNode_Print(statement_expression.expression, indent)
+				}
+
+				case ^BoundIf: {
+					iff := s
+					fmt.print("if ")
+					BoundNode_Print(iff.condition, indent)
+					fmt.print(" ")
+					if reflect.union_variant_typeid(iff.then_statement.statement_kind) != ^BoundScope {
+						fmt.print("do ")
+					}
+					BoundNode_Print(iff.then_statement, indent)
+					if iff.else_statement != nil {
+						fmt.print(" else ")
+						BoundNode_Print(iff.else_statement, indent)
+					}
 				}
 
 				case ^BoundPrint: {
@@ -257,19 +333,7 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 				case ^BoundUnary: {
 					unary := e
 					fmt.print("(")
-					#partial switch unary.unary_operator.operator_kind {
-						case .Plus: {
-							fmt.print("+")
-						}
-
-						case .Minus: {
-							fmt.print("-")
-						}
-
-						case: {
-							assert(false, "unreachable UnaryOperator kind in BoundNode_Print")
-						}
-					}
+					PrintUnaryOperator(unary.unary_operator.operator_kind)
 					BoundNode_Print(unary.operand, indent)
 					fmt.print(")")
 				}
@@ -279,31 +343,7 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 					fmt.print("(")
 					BoundNode_Print(binary.left, indent)
 					fmt.print(" ")
-					#partial switch binary.binary_operator.operator_kind {
-						case .Plus: {
-							fmt.print("+")
-						}
-
-						case .Minus: {
-							fmt.print("-")
-						}
-
-						case .Asterisk: {
-							fmt.print("*")
-						}
-
-						case .Slash: {
-							fmt.print("/")
-						}
-
-						case .Percent: {
-							fmt.print("%")
-						}
-
-						case: {
-							assert(false, "unreachable BinaryOperator kind in BoundNode_Print")
-						}
-					}
+					PrintBinaryOperator(binary.binary_operator.operator_kind)
 					fmt.print(" ")
 					BoundNode_Print(binary.right, indent)
 					fmt.print(")")
@@ -321,6 +361,11 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint) {
 				case ^BoundIntegerType: {
 					integer_type := t
 					fmt.printf("{}{}", integer_type.signed ? "s" : "u", integer_type.size * 8)
+				}
+
+				case ^BoundBoolType: {
+					bool_type := t
+					fmt.print("bool")
 				}
 
 				case: {

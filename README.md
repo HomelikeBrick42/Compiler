@@ -2,7 +2,7 @@
 
 ## TODOs
 
-- [ ] if-else
+- [x] if-else
 - [ ] loops
 - [ ] explicit types
 - [ ] arrays

@@ -1,6 +1,7 @@
 package compiler
 
 import "core:fmt"
+import "core:reflect"
 
 Binder :: struct {
 	types: [dynamic]^BoundType,
@@ -95,6 +96,69 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
+	AddBinary(
+		&binder,
+		.Percent,
+		InstModS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
+
+	AddBinary(
+		&binder,
+		.EqualsEquals,
+		InstEqualS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.ExclamationMarkEquals,
+		InstNotEqualS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.LessThan,
+		InstLessThanS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.LessThanEquals,
+		InstLessThanEqualS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.GreaterThan,
+		InstGreaterThanS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.GreaterThanEquals,
+		InstGreaterThanEqualS64{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetBoolType(&binder),
+	)
+
 	return binder
 }
 
@@ -118,6 +182,21 @@ Binder_GetIntegerType :: proc(binder: ^Binder, size: uint, signed: bool) -> ^Bou
 	integer_type.signed = signed
 	append(&binder.types, integer_type)
 	return integer_type
+}
+
+Binder_GetBoolType :: proc(binder: ^Binder) -> ^BoundBoolType {
+	// Speed this up somehow
+	for type in binder.types {
+		if bool_type, ok := type.type_kind.(^BoundBoolType); ok {
+			if bool_type.size == 1 {
+				return bool_type
+			}
+		}
+	}
+
+	bool_type := BoundType_Create(BoundBoolType, 1, len(binder.types))
+	append(&binder.types, bool_type)
+	return bool_type
 }
 
 Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundFile, error: Maybe(Error)) {
@@ -235,6 +314,23 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			bound_statement_expression := BoundStatement_Create(BoundStatementExpression, parent_file, parent_scope)
 			bound_statement_expression.expression = Binder_BindExpression(binder, statement_expression.expression, bound_statement_expression) or_return
 			return bound_statement_expression, nil
+		}
+
+		case ^AstIf: {
+			iff := s
+			bound_if := BoundStatement_Create(BoundIf, parent_file, parent_scope)
+			bound_if.condition = Binder_BindExpression(binder, iff.condition, bound_if) or_return
+			if bound_if.condition.type != Binder_GetBoolType(binder) {
+				return {}, Error{
+					loc     = iff.if_token.loc,
+					message = "if condition needs a bool type",
+				}
+			}
+			bound_if.then_statement = Binder_BindStatement(binder, iff.then_statement, parent_file, parent_scope) or_return
+			if iff.else_statement != nil {
+				bound_if.else_statement = Binder_BindStatement(binder, iff.else_statement, parent_file, parent_scope) or_return
+			}
+			return bound_if, nil
 		}
 
 		// This is temporary

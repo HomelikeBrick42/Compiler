@@ -21,6 +21,8 @@ lexer_single_tokens := map[rune]TokenKind{
 	'%' = .Percent,
 	'=' = .Equals,
 	'!' = .ExclamationMark,
+	'<' = .LessThan,
+	'>' = .GreaterThan,
 }
 
 @(private="file")
@@ -35,11 +37,16 @@ lexer_double_tokens := map[rune]struct{
 	'%' = { '=', .PercentEquals         },
 	'=' = { '=', .EqualsEquals          },
 	'!' = { '=', .ExclamationMarkEquals },
+	'<' = { '=', .LessThanEquals        },
+	'>' = { '=', .GreaterThanEquals     },
 }
 
 @(private="file")
 lexer_keywords := map[string]TokenKind{
 	"print" = .PrintKeyword, // This is temporary
+	"if"    = .IfKeyword,
+	"else"  = .ElseKeyword,
+	"do"    = .DoKeyword,
 }
 
 Lexer :: struct {

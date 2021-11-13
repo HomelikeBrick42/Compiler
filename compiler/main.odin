@@ -153,6 +153,25 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, InstPop{ statement_expression.expression.type.size })
 				}
 
+				case ^BoundIf: {
+					iff := s
+					EmitBytecode(iff.condition, program)
+					jump_else_location := len(program)
+					append(program, InstJumpZero{})
+					EmitBytecode(iff.then_statement, program)
+					jump_end_location := len(program)
+					if iff.else_statement != nil {
+						append(program, InstJump{})
+					}
+					else_jump := &program[jump_else_location].(InstJumpZero)
+					else_jump.location = len(program)
+					if iff.else_statement != nil {
+						EmitBytecode(iff.else_statement, program)
+						end_jump := &program[jump_end_location].(InstJump)
+						end_jump.location = len(program)
+					}
+				}
+
 				case ^BoundPrint: {
 					print := s
 					EmitBytecode(print.expression, program)

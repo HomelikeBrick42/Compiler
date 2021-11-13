@@ -1,9 +1,19 @@
 1 + -2 * 3;
 a := (1 + -2) * 3;
-a += 5;
-print a;
+
+if a <= 0 do a += 5;
+
+if a > 0 {
+	print a;
+}
 
 {
 	b := a / 2;
 	print b;
+
+	if b < 5 {
+		print 34 + 35;
+	} else {
+		print 400 + 20;
+	}
 }

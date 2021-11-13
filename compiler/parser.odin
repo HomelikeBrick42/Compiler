@@ -50,20 +50,41 @@ Parser_ParseFile :: proc(parser: ^Parser) -> (file: ^AstFile, error: Maybe(Error
 	return file, nil
 }
 
+Parser_ParseScope :: proc(parser: ^Parser) -> (scope: ^AstScope, error: Maybe(Error)) {
+	Parser_ExpectToken(parser, .OpenBrace) or_return
+	scope = AstStatement_Create(AstScope)
+	for parser.current.kind != .CloseBrace && parser.current.kind != .EndOfFile {
+		statement := Parser_ParseStatement(parser) or_return
+		if parser.previous.kind != .CloseBrace || parser.current.kind == .Semicolon {
+			Parser_ExpectToken(parser, .Semicolon) or_return
+		}
+		append(&scope.statements, statement)
+	}
+	Parser_ExpectToken(parser, .CloseBrace) or_return
+	return scope, nil
+}
+
 Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, error: Maybe(Error)) {
 	#partial switch parser.current.kind {
 		case .OpenBrace: {
-			Parser_ExpectToken(parser, .OpenBrace) or_return
-			scope := AstStatement_Create(AstScope)
-			for parser.current.kind != .CloseBrace && parser.current.kind != .EndOfFile {
-				statement := Parser_ParseStatement(parser) or_return
-				if parser.previous.kind != .CloseBrace || parser.current.kind == .Semicolon {
-					Parser_ExpectToken(parser, .Semicolon) or_return
-				}
-				append(&scope.statements, statement)
+			return Parser_ParseScope(parser)
+		}
+
+		case .IfKeyword: {
+			iff := AstStatement_Create(AstIf)
+			iff.if_token  = Parser_ExpectToken(parser, .IfKeyword) or_return
+			iff.condition = Parser_ParseExpression(parser) or_return
+			if parser.current.kind == .DoKeyword {
+				Parser_ExpectToken(parser, .DoKeyword) or_return
+				iff.then_statement = Parser_ParseStatement(parser) or_return
+			} else {
+				iff.then_statement = Parser_ParseScope(parser) or_return
 			}
-			Parser_ExpectToken(parser, .CloseBrace) or_return
-			return scope, nil
+			if parser.current.kind == .ElseKeyword {
+				iff.else_token = Parser_ExpectToken(parser, .ElseKeyword) or_return
+				iff.else_statement = Parser_ParseStatement(parser) or_return
+			}
+			return iff, nil
 		}
 
 		// This is temporary
@@ -179,7 +200,7 @@ GetBinaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 			return 2
 		}
 
-		case .EqualsEquals, .ExclamationMarkEquals: {
+		case .EqualsEquals, .ExclamationMarkEquals, .GreaterThan, .GreaterThanEquals, .LessThan, .LessThanEquals: {
 			return 1
 		}
 

@@ -39,12 +39,28 @@ VM_Pop :: proc(vm: ^VM, $T: typeid) -> T {
 
 VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 	for {
+		// fmt.println(vm.program[vm.ip])
 		switch inst in vm.program[vm.ip] {
 			case InstExit: {
 				return nil
 			}
 
 			case InstNoOp: {
+			}
+
+			case InstJump: {
+				vm.ip = inst.location
+				continue
+			}
+
+			case InstJumpZero: {
+				value := VM_Pop(vm, bool)
+				if !value {
+					vm.ip = inst.location
+				} else {
+					vm.ip += 1
+				}
+				continue
 			}
 
 			case InstAllocStack: {
@@ -112,6 +128,42 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				b := VM_Pop(vm, i64)
 				a := VM_Pop(vm, i64)
 				VM_Push(vm, a % b)
+			}
+
+			case InstEqualS64: {
+				b := VM_Pop(vm, i64)
+				a := VM_Pop(vm, i64)
+				VM_Push(vm, a == b)
+			}
+
+			case InstNotEqualS64: {
+				b := VM_Pop(vm, i64)
+				a := VM_Pop(vm, i64)
+				VM_Push(vm, a != b)
+			}
+
+			case InstLessThanS64: {
+				b := VM_Pop(vm, i64)
+				a := VM_Pop(vm, i64)
+				VM_Push(vm, a < b)
+			}
+
+			case InstLessThanEqualS64: {
+				b := VM_Pop(vm, i64)
+				a := VM_Pop(vm, i64)
+				VM_Push(vm, a <= b)
+			}
+
+			case InstGreaterThanS64: {
+				b := VM_Pop(vm, i64)
+				a := VM_Pop(vm, i64)
+				VM_Push(vm, a > b)
+			}
+
+			case InstGreaterThanEqualS64: {
+				b := VM_Pop(vm, i64)
+				a := VM_Pop(vm, i64)
+				VM_Push(vm, a >= b)
 			}
 
 			case InstPrintS64: {
