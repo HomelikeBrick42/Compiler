@@ -98,6 +98,7 @@ AstExpression :: struct {
 		^AstArray,
 		^AstArrayIndex,
 		^AstSizeOf,
+		^AstCast,
 		^AstTrue,
 		^AstFalse,
 		^AstUnary,
@@ -141,6 +142,13 @@ AstArrayIndex :: struct {
 AstSizeOf :: struct {
 	using expression: AstExpression,
 	sizeof_token: Token,
+	operand: ^AstExpression,
+}
+
+AstCast :: struct {
+	using expression: AstExpression,
+	cast_token: Token,
+	type: ^AstExpression,
 	operand: ^AstExpression,
 }
 

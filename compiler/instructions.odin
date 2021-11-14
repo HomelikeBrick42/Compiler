@@ -57,6 +57,9 @@ Instruction :: union {
 	InstSubPtr,
 	InstMulPtr,
 	InstPrintPtr,
+
+	InstS64ToU8,
+	InstU8ToS64,
 }
 
 InstExit      :: struct {}
@@ -115,3 +118,6 @@ InstAddPtr       :: struct {}
 InstSubPtr       :: struct {}
 InstMulPtr       :: struct {}
 InstPrintPtr     :: struct {}
+
+InstU8ToS64 :: struct {}
+InstS64ToU8 :: struct {}

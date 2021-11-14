@@ -3,10 +3,17 @@ package compiler
 import "core:fmt"
 import "core:reflect"
 
+Cast :: struct {
+	from: ^BoundType,
+	to: ^BoundType,
+	operation: Instruction,
+}
+
 Binder :: struct {
 	types: [dynamic]^BoundType,
 	unary_operators: [dynamic]^UnaryOperator,
 	binary_operators: [dynamic]^BinaryOperator,
+	casts: [dynamic]^Cast,
 }
 
 Binder_Create :: proc() -> Binder {
@@ -311,6 +318,30 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
+	AddCast :: proc(binder: ^Binder, operation: Instruction, from: ^BoundType, to: ^BoundType) {
+		castt := new(Cast)
+		castt^ = Cast{
+			from      = from,
+			to        = to,
+			operation = operation,
+		}
+		append(&binder.casts, castt)
+	}
+
+	AddCast(
+		&binder,
+		InstS64ToU8{},
+		Binder_GetIntegerType(&binder, 8, true),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddCast(
+		&binder,
+		InstU8ToS64{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 8, true),
+	)
+
 	return binder
 }
 
@@ -394,6 +425,10 @@ Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 			return true
 		}
 
+		case ^BoundCast: {
+			return false
+		}
+
 		case ^BoundTrue: {
 			return false
 		}
@@ -417,7 +452,7 @@ Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 	}
 }
 
-Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_file: ^BoundFile, parent_scope: ^BoundScope) -> (type: ^BoundType, error: Maybe(Error)) {
+Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_scope: ^BoundScope) -> (type: ^BoundType, error: Maybe(Error)) {
 	switch e in expression.expression_kind {
 		case ^AstName: {
 			name := e
@@ -454,7 +489,7 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_fi
 
 		case ^AstArray: {
 			array := e
-			inner_type := Binder_BindAsType(binder, array.type, parent_file, parent_scope) or_return
+			inner_type := Binder_BindAsType(binder, array.type, parent_scope) or_return
 			return Binder_GetArrayType(binder, inner_type, array.count), nil
 		}
 
@@ -471,6 +506,14 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_fi
 			return nil, Error{
 				loc     = sizeof.sizeof_token.loc,
 				message = "Cannot convert sizeof to type",
+			}
+		}
+
+		case ^AstCast: {
+			castt := e
+			return nil, Error{
+				loc     = castt.cast_token.loc,
+				message = "Cannot convert cast to type",
 			}
 		}
 
@@ -545,7 +588,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			}
 
 			if declaration.type != nil {
-				bound_declaration.type = Binder_BindAsType(binder, declaration.type, parent_file, parent_scope) or_return
+				bound_declaration.type = Binder_BindAsType(binder, declaration.type, parent_scope) or_return
 			}
 
 			if declaration.value != nil {
@@ -781,6 +824,25 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 			bound_integer := BoundExpression_Create(BoundInteger, integer_type, parent_statement)
 			bound_integer.value = cast(u64) bound_operand.type.size
 			return bound_integer, nil
+		}
+
+		case ^AstCast: {
+			castt := e
+			type := Binder_BindAsType(binder, castt.type, parent_statement.parent_scope) or_return
+			bound_operand := Binder_BindExpression(binder, castt.operand, type, parent_statement) or_return
+			if bound_operand.type == type {
+				return bound_operand, nil
+			}
+			cast_type: ^Cast = nil
+			for castt in binder.casts {
+				if castt.from == bound_operand.type && castt.to == type {
+					cast_type = castt
+				}
+			}
+			bound_cast := BoundExpression_Create(BoundCast, type, parent_statement)
+			bound_cast.castt = cast_type
+			bound_cast.operand = bound_operand
+			return bound_cast, nil
 		}
 
 		case ^AstTrue: {

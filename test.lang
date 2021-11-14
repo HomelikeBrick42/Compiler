@@ -3,11 +3,9 @@ array_length := sizeof(array) / sizeof(array[0]);
 
 {
 	i := 0;
-	j: u8 = 0;
 	while i < array_length {
-		array[i] = j;
+		array[i] = (cast(u8) i + 1) * 2;
 		i += 1;
-		j += 5;
 	}
 }
 

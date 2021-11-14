@@ -105,6 +105,7 @@ BoundExpression :: struct {
 		^BoundName,
 		^BoundInteger,
 		^BoundArrayIndex,
+		^BoundCast,
 		^BoundTrue,
 		^BoundFalse,
 		^BoundUnary,
@@ -136,6 +137,12 @@ BoundArrayIndex :: struct {
 	using expression: BoundExpression,
 	operand: ^BoundExpression,
 	index: ^BoundExpression,
+}
+
+BoundCast :: struct {
+	using expression: BoundExpression,
+	castt: ^Cast,
+	operand: ^BoundExpression,
 }
 
 BoundTrue :: struct {
@@ -317,6 +324,14 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					BoundNode_Print(array_index.index, indent, builder)
 					strings.write_string(builder, "]")
 					strings.write_string(builder, ")")
+				}
+
+				case ^BoundCast: {
+					castt := e
+					strings.write_string(builder, "cast(")
+					BoundNode_Print(castt.castt.to, indent, builder)
+					strings.write_string(builder, ") ")
+					BoundNode_Print(castt.operand, indent, builder)
 				}
 
 				case ^BoundTrue: {

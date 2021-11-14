@@ -15,6 +15,7 @@ TokenKind :: enum {
 	FalseKeyword,
 	WhileKeyword,
 	SizeOfKeyword,
+	CastKeyword,
 
 	OpenParenthesis,
 	CloseParenthesis,

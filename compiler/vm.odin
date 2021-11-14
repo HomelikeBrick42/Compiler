@@ -322,6 +322,16 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				fmt.println(value)
 			}
 
+			case InstS64ToU8: {
+				value := VM_Pop(vm, i64)
+				VM_Push(vm, cast(u8) value)
+			}
+
+			case InstU8ToS64: {
+				value := VM_Pop(vm, u8)
+				VM_Push(vm, cast(i64) value)
+			}
+
 			case: {
 				message := "unreachable Instruction default case in VM_Run"
 				assert(false, message)

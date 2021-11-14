@@ -290,6 +290,12 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, InstLoadPtr{ array_index.type.size })
 				}
 
+				case ^BoundCast: {
+					castt := e
+					EmitBytecode(castt.operand, program)
+					append(program, castt.castt.operation)
+				}
+
 				case ^BoundTrue: {
 					truee := e
 					append(program, InstPushBool{ true })

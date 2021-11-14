@@ -213,7 +213,7 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 @(private="file")
 GetUnaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 	#partial switch kind {
-		case .Plus, .Minus, .ExclamationMark, .OpenBracket: {
+		case .Plus, .Minus, .ExclamationMark, .OpenBracket, .CastKeyword: {
 			return 6
 		}
 
@@ -263,6 +263,14 @@ Parser_ParseBinaryExpression :: proc(parser: ^Parser, parent_precedence: uint) -
 			array.close_bracket_token = Parser_ExpectToken(parser, .CloseBracket) or_return
 			array.type = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
 			expression = array
+		} else if token.kind == .CastKeyword {
+			castt := AstExpression_Create(AstCast)
+			castt.cast_token = token
+			Parser_ExpectToken(parser, .OpenParenthesis) or_return
+			castt.type = Parser_ParseExpression(parser) or_return
+			Parser_ExpectToken(parser, .CloseParenthesis) or_return
+			castt.operand = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
+			expression = castt
 		} else {
 			unary := AstExpression_Create(AstUnary)
 			unary.operator_token = token
