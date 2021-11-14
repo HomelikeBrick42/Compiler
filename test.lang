@@ -4,7 +4,7 @@ array_length := sizeof(array) / sizeof(array[0]);
 {
 	i := 0;
 	while i < array_length {
-		array[i] = (cast(u8) i + 1) * 2;
+		array[i] = cast(u8) (i + 1) * 2;
 		i += 1;
 	}
 }

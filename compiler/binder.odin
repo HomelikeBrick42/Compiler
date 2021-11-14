@@ -892,7 +892,7 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 		case ^AstBinary: {
 			binary := e
 			bound_left := Binder_BindExpression(binder, binary.left, suggested_type, parent_statement) or_return
-			bound_right := Binder_BindExpression(binder, binary.right, suggested_type == nil ? bound_left.type : suggested_type, parent_statement) or_return
+			bound_right := Binder_BindExpression(binder, binary.right, bound_left.type, parent_statement) or_return
 
 			binary_operator: ^BinaryOperator = nil
 			for operator in binder.binary_operators {
