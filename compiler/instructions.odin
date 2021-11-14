@@ -15,6 +15,20 @@ Instruction :: union {
 	InstLoadPtr,
 	InstStorePtr,
 
+	InstPushU8,
+	InstAddU8,
+	InstSubU8,
+	InstMulU8,
+	InstDivU8,
+	InstModU8,
+	InstEqualU8,
+	InstNotEqualU8,
+	InstLessThanU8,
+	InstLessThanEqualU8,
+	InstGreaterThanU8,
+	InstGreaterThanEqualU8,
+	InstPrintU8,
+
 	InstPushS64,
 	InstNegateS64,
 	InstAddS64,
@@ -58,6 +72,20 @@ InstLoadGlobalPtr  :: struct { offset: uint }
 InstLoadLocalPtr   :: struct { offset: uint }
 InstLoadPtr        :: struct { size: uint }
 InstStorePtr       :: struct { size: uint }
+
+InstPushU8             :: struct { value: u8 }
+InstAddU8              :: struct {}
+InstSubU8              :: struct {}
+InstMulU8              :: struct {}
+InstDivU8              :: struct {}
+InstModU8              :: struct {}
+InstEqualU8            :: struct {}
+InstNotEqualU8         :: struct {}
+InstLessThanU8         :: struct {}
+InstLessThanEqualU8    :: struct {}
+InstGreaterThanU8      :: struct {}
+InstGreaterThanEqualU8 :: struct {}
+InstPrintU8            :: struct {}
 
 InstPushS64             :: struct { value: i64 }
 InstNegateS64           :: struct {}

@@ -232,8 +232,22 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 				case ^BoundPrint: {
 					print := s
 					EmitBytecode(print.expression, program)
-					assert(reflect.union_variant_typeid(print.expression.type.type_kind) == ^BoundIntegerType)
-					append(program, InstPrintS64{})
+					integer_type := print.expression.type.type_kind.(^BoundIntegerType)
+					if integer_type.signed {
+						switch integer_type.size {
+							case 8:
+								append(program, InstPrintS64{})
+							case:
+								assert(false, "unreachable size in signed integer EmitBytecode")
+						}
+					} else {
+						switch integer_type.size {
+							case 1:
+								append(program, InstPrintU8{})
+							case:
+								assert(false, "unreachable size in unsigned integer EmitBytecode")
+						}
+					}
 				}
 
 				case: {
@@ -253,7 +267,21 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 
 				case ^BoundInteger: {
 					integer := e
-					append(program, InstPushS64{ cast(i64) integer.value })
+					if integer.type.type_kind.(^BoundIntegerType).signed {
+						switch integer.type.size {
+							case 8:
+								append(program, InstPushS64{ cast(i64) integer.value })
+							case:
+								assert(false, "unreachable size in signed integer EmitBytecode")
+						}
+					} else {
+						switch integer.type.size {
+							case 1:
+								append(program, InstPushU8{ cast(u8) integer.value })
+							case:
+								assert(false, "unreachable size in unsigned integer EmitBytecode")
+						}
+					}
 				}
 
 				case ^BoundArrayIndex: {

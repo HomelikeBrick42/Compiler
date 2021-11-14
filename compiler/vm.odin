@@ -102,6 +102,81 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				mem.copy(vm.sp, ptr, cast(int) inst.size)
 			}
 
+			case InstPushU8: {
+				VM_Push(vm, inst.value)
+			}
+
+			case InstAddU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a + b)
+			}
+
+			case InstSubU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a - b)
+			}
+
+			case InstMulU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a * b)
+			}
+
+			case InstDivU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a / b)
+			}
+
+			case InstModU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a % b)
+			}
+
+			case InstEqualU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a == b)
+			}
+
+			case InstNotEqualU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a != b)
+			}
+
+			case InstLessThanU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a < b)
+			}
+
+			case InstLessThanEqualU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a <= b)
+			}
+
+			case InstGreaterThanU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a > b)
+			}
+
+			case InstGreaterThanEqualU8: {
+				b := VM_Pop(vm, u8)
+				a := VM_Pop(vm, u8)
+				VM_Push(vm, a >= b)
+			}
+
+			case InstPrintU8: {
+				value := VM_Pop(vm, u8)
+				fmt.println(value)
+			}
+
 			case InstPushS64: {
 				VM_Push(vm, inst.value)
 			}

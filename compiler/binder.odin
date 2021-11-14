@@ -169,6 +169,114 @@ Binder_Create :: proc() -> Binder {
 
 	AddBinary(
 		&binder,
+		.Plus,
+		InstAddU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddBinary(
+		&binder,
+		.Minus,
+		InstSubU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddBinary(
+		&binder,
+		.Asterisk,
+		InstMulU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddBinary(
+		&binder,
+		.Slash,
+		InstDivU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddBinary(
+		&binder,
+		.Percent,
+		InstModU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddBinary(
+		&binder,
+		.Percent,
+		InstModU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+	)
+
+	AddBinary(
+		&binder,
+		.EqualsEquals,
+		InstEqualU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.ExclamationMarkEquals,
+		InstNotEqualU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.LessThan,
+		InstLessThanU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.LessThanEquals,
+		InstLessThanEqualU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.GreaterThan,
+		InstGreaterThanU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
+		.GreaterThanEquals,
+		InstGreaterThanEqualU8{},
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetIntegerType(&binder, 1, false),
+		Binder_GetBoolType(&binder),
+	)
+
+	AddBinary(
+		&binder,
 		.EqualsEquals,
 		InstEqualBool{},
 		Binder_GetBoolType(&binder),
@@ -315,6 +423,10 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_fi
 			name := e
 			name_string := name.name_token.data.(string)
 			switch name_string {
+				case "u8": {
+					return Binder_GetIntegerType(binder, 1, false), nil
+				}
+
 				case "s64": {
 					return Binder_GetIntegerType(binder, 8, true), nil
 				}
@@ -437,7 +549,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			}
 
 			if declaration.value != nil {
-				bound_declaration.value = Binder_BindExpression(binder, declaration.value, bound_declaration) or_return
+				bound_declaration.value = Binder_BindExpression(binder, declaration.value, bound_declaration.type, bound_declaration) or_return
 			}
 
 			if bound_declaration.type == nil {
@@ -463,8 +575,8 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 		case ^AstAssignment: {
 			assignment := s
 			bound_assignment := BoundStatement_Create(BoundAssignment, parent_file, parent_scope)
-			bound_assignment.operand = Binder_BindExpression(binder, assignment.operand, bound_assignment) or_return
-			bound_assignment.value   = Binder_BindExpression(binder, assignment.value, bound_assignment) or_return
+			bound_assignment.operand = Binder_BindExpression(binder, assignment.operand, nil, bound_assignment) or_return
+			bound_assignment.value   = Binder_BindExpression(binder, assignment.value, bound_assignment.operand.type, bound_assignment) or_return
 			
 			if !Binder_IsAssignable(binder, bound_assignment.operand) {
 				return nil, Error{
@@ -516,14 +628,14 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 		case ^AstStatementExpression: {
 			statement_expression := s
 			bound_statement_expression := BoundStatement_Create(BoundStatementExpression, parent_file, parent_scope)
-			bound_statement_expression.expression = Binder_BindExpression(binder, statement_expression.expression, bound_statement_expression) or_return
+			bound_statement_expression.expression = Binder_BindExpression(binder, statement_expression.expression, nil, bound_statement_expression) or_return
 			return bound_statement_expression, nil
 		}
 
 		case ^AstIf: {
 			iff := s
 			bound_if := BoundStatement_Create(BoundIf, parent_file, parent_scope)
-			bound_if.condition = Binder_BindExpression(binder, iff.condition, bound_if) or_return
+			bound_if.condition = Binder_BindExpression(binder, iff.condition, Binder_GetBoolType(binder), bound_if) or_return
 			if bound_if.condition.type != Binder_GetBoolType(binder) {
 				return {}, Error{
 					loc     = iff.if_token.loc,
@@ -543,7 +655,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 		case ^AstWhile: {
 			whilee := s
 			bound_while := BoundStatement_Create(BoundWhile, parent_file, parent_scope)
-			bound_while.condition = Binder_BindExpression(binder, whilee.condition, bound_while) or_return
+			bound_while.condition = Binder_BindExpression(binder, whilee.condition, Binder_GetBoolType(binder), bound_while) or_return
 			if bound_while.condition.type != Binder_GetBoolType(binder) {
 				return {}, Error{
 					loc     = whilee.while_token.loc,
@@ -561,8 +673,8 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 		case ^AstPrint: {
 			print := s
 			bound_print := BoundStatement_Create(BoundPrint, parent_file, parent_scope)
-			bound_print.expression = Binder_BindExpression(binder, print.expression, bound_print) or_return
-			if bound_print.expression.type != Binder_GetIntegerType(binder, 8, true) {
+			bound_print.expression = Binder_BindExpression(binder, print.expression, nil, bound_print) or_return
+			if bound_print.expression.type != Binder_GetIntegerType(binder, 8, true) && bound_print.expression.type != Binder_GetIntegerType(binder, 1, false) {
 				return {}, Error{
 					loc     = print.print_token,
 					message = fmt.tprintf(
@@ -584,7 +696,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 	}
 }
 
-Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, parent_statement: ^BoundStatement) -> (bound_expression: ^BoundExpression, error: Maybe(Error)) {
+Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, suggested_type: ^BoundType, parent_statement: ^BoundStatement) -> (bound_expression: ^BoundExpression, error: Maybe(Error)) {
 	switch e in expression.expression_kind {
 		case ^AstName: {
 			name := e
@@ -610,7 +722,12 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 
 		case ^AstInteger: {
 			integer := e
-			integer_type := Binder_GetIntegerType(binder, 8, true)
+			integer_type := cast(^BoundType) Binder_GetIntegerType(binder, 8, true)
+			if suggested_type != nil {
+				if _, ok := suggested_type.type_kind.(^BoundIntegerType); ok {
+					integer_type = suggested_type
+				}
+			}
 			bound_integer := BoundExpression_Create(BoundInteger, integer_type, parent_statement)
 			bound_integer.value = integer.integer_token.data.(u64)
 			return bound_integer, nil
@@ -626,7 +743,7 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 
 		case ^AstArrayIndex: {
 			array_index := e
-			bound_operand := Binder_BindExpression(binder, array_index.operand, parent_statement) or_return
+			bound_operand := Binder_BindExpression(binder, array_index.operand, nil, parent_statement) or_return
 			if array_type, ok := bound_operand.type.type_kind.(^BoundArrayType); !ok {
 				return nil, Error{
 					loc     = array_index.open_bracket_token.loc,
@@ -636,7 +753,7 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 					),
 				}
 			}
-			bound_index := Binder_BindExpression(binder, array_index.index, parent_statement) or_return
+			bound_index := Binder_BindExpression(binder, array_index.index, nil, parent_statement) or_return
 			if bound_index.type != Binder_GetIntegerType(binder, 8, true) {
 				return nil, Error{
 					loc     = array_index.open_bracket_token.loc,
@@ -654,8 +771,13 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 
 		case ^AstSizeOf: {
 			sizeof := e
-			bound_operand := Binder_BindExpression(binder, sizeof.operand, parent_statement) or_return
-			integer_type  := Binder_GetIntegerType(binder, 8, true)
+			bound_operand := Binder_BindExpression(binder, sizeof.operand, nil, parent_statement) or_return
+			integer_type  := cast(^BoundType) Binder_GetIntegerType(binder, 8, true)
+			if suggested_type != nil {
+				if _, ok := suggested_type.type_kind.(^BoundIntegerType); ok {
+					integer_type = suggested_type
+				}
+			}
 			bound_integer := BoundExpression_Create(BoundInteger, integer_type, parent_statement)
 			bound_integer.value = cast(u64) bound_operand.type.size
 			return bound_integer, nil
@@ -677,7 +799,7 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 
 		case ^AstUnary: {
 			unary := e
-			bound_operand := Binder_BindExpression(binder, unary.operand, parent_statement) or_return
+			bound_operand := Binder_BindExpression(binder, unary.operand, suggested_type, parent_statement) or_return
 
 			unary_operator: ^UnaryOperator = nil
 			for operator in binder.unary_operators {
@@ -707,8 +829,8 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 
 		case ^AstBinary: {
 			binary := e
-			bound_left := Binder_BindExpression(binder, binary.left, parent_statement) or_return
-			bound_right := Binder_BindExpression(binder, binary.right, parent_statement) or_return
+			bound_left := Binder_BindExpression(binder, binary.left, suggested_type, parent_statement) or_return
+			bound_right := Binder_BindExpression(binder, binary.right, suggested_type == nil ? bound_left.type : suggested_type, parent_statement) or_return
 
 			binary_operator: ^BinaryOperator = nil
 			for operator in binder.binary_operators {
