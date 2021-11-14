@@ -5,7 +5,7 @@
 - [x] if-else
 - [x] loops
 - [x] explicit types
-- [ ] arrays
+- [x] arrays
 - [ ] constants
 
 ## How to build

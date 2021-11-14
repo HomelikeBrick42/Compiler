@@ -236,6 +236,12 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				VM_Push(vm, a - b)
 			}
 
+			case InstMulPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a * b)
+			}
+
 			case InstPrintPtr: {
 				value := VM_Pop(vm, rawptr)
 				fmt.println(value)

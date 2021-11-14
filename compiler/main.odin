@@ -127,6 +127,15 @@ EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					}
 				}
 
+				case ^BoundArrayIndex: {
+					array_index := e
+					EmitPtr(array_index.operand, program)
+					EmitBytecode(array_index.index, program)
+					append(program, InstPushPtr{ cast(uintptr) array_index.type.size })
+					append(program, InstMulPtr{})
+					append(program, InstAddPtr{})
+				}
+
 				case: {
 					assert(false, "unreachable BoundExpression default case in EmitPtr")
 				}
@@ -244,6 +253,12 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 				case ^BoundInteger: {
 					integer := e
 					append(program, InstPushS64{ cast(i64) integer.value })
+				}
+
+				case ^BoundArrayIndex: {
+					array_index := e
+					EmitPtr(array_index, program)
+					append(program, InstLoadPtr{ array_index.type.size })
 				}
 
 				case ^BoundTrue: {

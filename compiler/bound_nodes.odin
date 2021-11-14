@@ -103,6 +103,7 @@ BoundExpression :: struct {
 	expression_kind: union {
 		^BoundName,
 		^BoundInteger,
+		^BoundArrayIndex,
 		^BoundTrue,
 		^BoundFalse,
 		^BoundUnary,
@@ -128,6 +129,12 @@ BoundName :: struct {
 BoundInteger :: struct {
 	using expression: BoundExpression,
 	value: u64,
+}
+
+BoundArrayIndex :: struct {
+	using expression: BoundExpression,
+	operand: ^BoundExpression,
+	index: ^BoundExpression,
 }
 
 BoundTrue :: struct {
@@ -158,6 +165,7 @@ BoundType :: struct {
 	type_kind: union {
 		^BoundIntegerType,
 		^BoundBoolType,
+		^BoundArrayType,
 	},
 }
 
@@ -177,6 +185,12 @@ BoundIntegerType :: struct {
 
 BoundBoolType :: struct {
 	using type: BoundType,
+}
+
+BoundArrayType :: struct {
+	using type: BoundType,
+	count: uint,
+	inner_type: ^BoundType,
 }
 
 BoundNode_ToString :: proc(bound_node: ^BoundNode, allocator := context.allocator) -> string {
@@ -294,6 +308,16 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					strings.write_string(builder, fmt.tprint(integer.value))
 				}
 
+				case ^BoundArrayIndex: {
+					array_index := e
+					strings.write_string(builder, "(")
+					BoundNode_Print(array_index.operand, indent, builder)
+					strings.write_string(builder, "[")
+					BoundNode_Print(array_index.index, indent, builder)
+					strings.write_string(builder, "]")
+					strings.write_string(builder, ")")
+				}
+
 				case ^BoundTrue: {
 					truee := e
 					strings.write_string(builder, "true")
@@ -340,6 +364,12 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 				case ^BoundBoolType: {
 					bool_type := t
 					strings.write_string(builder, "bool")
+				}
+
+				case ^BoundArrayType: {
+					array_type := t
+					strings.write_string(builder, fmt.tprintf("[{}]", array_type.count))
+					BoundNode_Print(array_type.inner_type, indent, builder)
 				}
 
 				case: {

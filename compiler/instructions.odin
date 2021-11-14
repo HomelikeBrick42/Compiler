@@ -41,6 +41,7 @@ Instruction :: union {
 	InstPushPtr,
 	InstAddPtr,
 	InstSubPtr,
+	InstMulPtr,
 	InstPrintPtr,
 }
 
@@ -84,4 +85,5 @@ InstPrintBool    :: struct {}
 InstPushPtr      :: struct { value: uintptr }
 InstAddPtr       :: struct {}
 InstSubPtr       :: struct {}
+InstMulPtr       :: struct {}
 InstPrintPtr     :: struct {}

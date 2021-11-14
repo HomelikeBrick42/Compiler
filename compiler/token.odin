@@ -19,6 +19,8 @@ TokenKind :: enum {
 	CloseParenthesis,
 	OpenBrace,
 	CloseBrace,
+	OpenBracket,
+	CloseBracket,
 	Colon,
 	Semicolon,
 

@@ -204,7 +204,7 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 @(private="file")
 GetUnaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 	#partial switch kind {
-		case .Plus, .Minus, .ExclamationMark: {
+		case .Plus, .Minus, .ExclamationMark, .OpenBracket: {
 			return 6
 		}
 
@@ -245,25 +245,45 @@ GetBinaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 
 Parser_ParseBinaryExpression :: proc(parser: ^Parser, parent_precedence: uint) -> (expression: ^AstExpression, error: Maybe(Error)) {
 	if unary_precedence := GetUnaryOperatorPrecedence(parser.current.kind); unary_precedence > 0 {
-		unary := AstExpression_Create(AstUnary)
-		unary.operator_token = Parser_NextToken(parser) or_return
-		unary.operand = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
-		expression = unary
+		token := Parser_NextToken(parser) or_return
+		if token.kind == .OpenBracket {
+			array := AstExpression_Create(AstArray)
+			array.open_bracket_token = token
+			integer := Parser_ExpectToken(parser, .Integer) or_return
+			array.count = cast(uint) integer.data.(u64)
+			array.close_bracket_token = Parser_ExpectToken(parser, .CloseBracket) or_return
+			array.type = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
+			expression = array
+		} else {
+			unary := AstExpression_Create(AstUnary)
+			unary.operator_token = token
+			unary.operand = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
+			expression = unary
+		}
 	} else {
 		expression = Parser_ParsePrimaryExpression(parser) or_return
 	}
 
 	for {
-		binary_precedence := GetBinaryOperatorPrecedence(parser.current.kind)
-		if binary_precedence <= parent_precedence {
-			break
-		}
+		if parser.current.kind == .OpenBracket {
+			array_index := AstExpression_Create(AstArrayIndex)
+			array_index.operand = expression
+			array_index.open_bracket_token = Parser_ExpectToken(parser, .OpenBracket) or_return
+			array_index.index = Parser_ParseExpression(parser) or_return
+			array_index.close_bracket_token = Parser_ExpectToken(parser, .CloseBracket) or_return
+			expression = array_index
+		} else {
+			binary_precedence := GetBinaryOperatorPrecedence(parser.current.kind)
+			if binary_precedence <= parent_precedence {
+				break
+			}
 
-		binary := AstExpression_Create(AstBinary)
-		binary.left = expression
-		binary.operator_token = Parser_NextToken(parser) or_return
-		binary.right = Parser_ParseBinaryExpression(parser, binary_precedence) or_return
-		expression = binary
+			binary := AstExpression_Create(AstBinary)
+			binary.left = expression
+			binary.operator_token = Parser_NextToken(parser) or_return
+			binary.right = Parser_ParseBinaryExpression(parser, binary_precedence) or_return
+			expression = binary
+		}
 	}
 
 	return

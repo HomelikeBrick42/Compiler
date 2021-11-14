@@ -243,6 +243,23 @@ Binder_GetBoolType :: proc(binder: ^Binder) -> ^BoundBoolType {
 	return bool_type
 }
 
+Binder_GetArrayType :: proc(binder: ^Binder, inner_type: ^BoundType, count: uint) -> ^BoundArrayType {
+	// Speed this up somehow
+	for type in binder.types {
+		if array_type, ok := type.type_kind.(^BoundArrayType); ok {
+			if array_type.inner_type == inner_type && array_type.count == count {
+				return array_type
+			}
+		}
+	}
+
+	array_type := BoundType_Create(BoundArrayType, inner_type.size * count, len(binder.types))
+	array_type.inner_type = inner_type
+	array_type.count = count
+	append(&binder.types, array_type)
+	return array_type
+}
+
 Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundFile, error: Maybe(Error)) {
 	bound_file = BoundNode_Create(BoundFile)
 	bound_file.scope = BoundStatement_Create(BoundScope, bound_file, nil)
@@ -253,6 +270,43 @@ Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundF
 	}
 
 	return bound_file, nil
+}
+
+Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bool {
+	switch e in expression.expression_kind {
+		case ^BoundName: {
+			return true
+		}
+
+		case ^BoundInteger: {
+			return false
+		}
+
+		case ^BoundArrayIndex: {
+			return true
+		}
+
+		case ^BoundTrue: {
+			return false
+		}
+
+		case ^BoundFalse: {
+			return false
+		}
+
+		case ^BoundUnary: {
+			return false
+		}
+
+		case ^BoundBinary: {
+			return false
+		}
+
+		case: {
+			assert(false, "unreachable default case in Binder_IsAssignable")
+			return false
+		}
+	}
 }
 
 Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_file: ^BoundFile, parent_scope: ^BoundScope) -> (type: ^BoundType, error: Maybe(Error)) {
@@ -283,6 +337,20 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_fi
 			return nil, Error{
 				loc     = integer.integer_token.loc,
 				message = "Cannot convert integer to type",
+			}
+		}
+
+		case ^AstArray: {
+			array := e
+			inner_type := Binder_BindAsType(binder, array.type, parent_file, parent_scope) or_return
+			return Binder_GetArrayType(binder, inner_type, array.count), nil
+		}
+
+		case ^AstArrayIndex: {
+			array_index := e
+			return nil, Error{
+				loc     = array_index.open_bracket_token.loc,
+				message = "Cannot convert array index to type",
 			}
 		}
 
@@ -365,7 +433,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 
 			if bound_declaration.type == nil {
 				bound_declaration.type = bound_declaration.value.type
-			} else if bound_declaration.type != bound_declaration.value.type {
+			} else if bound_declaration.value != nil && bound_declaration.type != bound_declaration.value.type {
 				return nil, Error{
 					loc     = declaration.equals_token,
 					message = fmt.tprintf(
@@ -376,8 +444,8 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 				}
 			}
 
-			bound_declaration.stack_location = parent_scope.stack_size
 			parent_scope.stack_size += bound_declaration.type.size
+			bound_declaration.stack_location = parent_scope.stack_size
 
 			parent_scope.declarations[bound_declaration.name] = bound_declaration
 			return bound_declaration, nil
@@ -389,10 +457,10 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			bound_assignment.operand = Binder_BindExpression(binder, assignment.operand, bound_assignment) or_return
 			bound_assignment.value   = Binder_BindExpression(binder, assignment.value, bound_assignment) or_return
 			
-			if _, ok := bound_assignment.operand.expression_kind.(^BoundName); !ok {
+			if !Binder_IsAssignable(binder, bound_assignment.operand) {
 				return nil, Error{
 					loc     = assignment.equals_token.loc,
-					message = "Cannot assign non names (for now)",
+					message = "Operand is not assignable",
 				}
 			}
 
@@ -537,6 +605,42 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			bound_integer := BoundExpression_Create(BoundInteger, integer_type, parent_statement)
 			bound_integer.value = integer.integer_token.data.(u64)
 			return bound_integer, nil
+		}
+
+		case ^AstArray: {
+			array := e
+			return nil, Error{
+				loc     = array.open_bracket_token.loc,
+				message = "Cannot declare array type outside of type context (for now)",
+			}
+		}
+
+		case ^AstArrayIndex: {
+			array_index := e
+			bound_operand := Binder_BindExpression(binder, array_index.operand, parent_statement) or_return
+			if array_type, ok := bound_operand.type.type_kind.(^BoundArrayType); !ok {
+				return nil, Error{
+					loc     = array_index.open_bracket_token.loc,
+					message = fmt.tprintf(
+						"Cannot index a '{}'",
+						BoundNode_ToString(bound_operand.type, context.temp_allocator),
+					),
+				}
+			}
+			bound_index := Binder_BindExpression(binder, array_index.index, parent_statement) or_return
+			if bound_index.type != Binder_GetIntegerType(binder, 8, true) {
+				return nil, Error{
+					loc     = array_index.open_bracket_token.loc,
+					message = fmt.tprintf(
+						"Cannot index array with type '{}'",
+						BoundNode_ToString(bound_index.type, context.temp_allocator),
+					),
+				}
+			}
+			bound_array_index := BoundExpression_Create(BoundArrayIndex, bound_operand.type.type_kind.(^BoundArrayType).inner_type, parent_statement)
+			bound_array_index.operand = bound_operand	
+			bound_array_index.index = bound_index
+			return bound_array_index, nil
 		}
 
 		case ^AstTrue: {

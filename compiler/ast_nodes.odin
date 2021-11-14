@@ -95,6 +95,8 @@ AstExpression :: struct {
 	expression_kind: union {
 		^AstName,
 		^AstInteger,
+		^AstArray,
+		^AstArrayIndex,
 		^AstTrue,
 		^AstFalse,
 		^AstUnary,
@@ -117,6 +119,22 @@ AstName :: struct {
 AstInteger :: struct {
 	using expression: AstExpression,
 	integer_token: Token,
+}
+
+AstArray :: struct {
+	using expression: AstExpression,
+	open_bracket_token: Token,
+	close_bracket_token: Token,
+	count: uint,
+	type: ^AstExpression,
+}
+
+AstArrayIndex :: struct {
+	using expression: AstExpression,
+	operand: ^AstExpression,
+	open_bracket_token: Token,
+	index: ^AstExpression,
+	close_bracket_token: Token,
 }
 
 AstTrue :: struct {
