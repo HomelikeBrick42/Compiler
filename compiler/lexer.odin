@@ -15,6 +15,7 @@ lexer_single_tokens := map[rune]TokenKind{
 	']' = .CloseBracket,
 	':' = .Colon,
 	';' = .Semicolon,
+	',' = .Comma,
 
 	'+' = .Plus,
 	'-' = .Minus,
@@ -28,21 +29,21 @@ lexer_single_tokens := map[rune]TokenKind{
 }
 
 @(private="file")
-lexer_double_tokens := map[rune]struct{
+lexer_double_tokens := map[rune][]struct{
 	second: rune,
 	kind: TokenKind,
 } {
-	'+' = { '=', .PlusEquals            },
-	'-' = { '=', .MinusEquals           },
-	'*' = { '=', .AsteriskEquals        },
-	'/' = { '=', .SlashEquals           },
-	'%' = { '=', .PercentEquals         },
-	'=' = { '=', .EqualsEquals          },
-	'!' = { '=', .ExclamationMarkEquals },
-	'<' = { '=', .LessThanEquals        },
-	'>' = { '=', .GreaterThanEquals     },
-	'&' = { '&', .AmpersandAmpersand    },
-	'|' = { '|', .PipePipe              },
+	'+' = { { '=', .PlusEquals            } },
+	'-' = { { '=', .MinusEquals           }, { '>', .RightArrow } },
+	'*' = { { '=', .AsteriskEquals        } },
+	'/' = { { '=', .SlashEquals           } },
+	'%' = { { '=', .PercentEquals         } },
+	'=' = { { '=', .EqualsEquals          } },
+	'!' = { { '=', .ExclamationMarkEquals } },
+	'<' = { { '=', .LessThanEquals        } },
+	'>' = { { '=', .GreaterThanEquals     } },
+	'&' = { { '&', .AmpersandAmpersand    } },
+	'|' = { { '|', .PipePipe              } },
 }
 
 @(private="file")
@@ -218,13 +219,15 @@ Lexer_NextToken :: proc(lexer: ^Lexer) -> (token: Token, error: Maybe(Error)) {
 				continue
 			}
 
-			if info, ok := lexer_double_tokens[last]; ok && lexer.current == info.second {
-				Lexer_NextRune(lexer)
-				return {
-					kind   = info.kind,
-					loc    = start_loc,
-					length = lexer.position - start_loc.position,
-				}, nil
+			if info, ok := lexer_double_tokens[last]; ok {
+				for info in info do if lexer.current == info.second {
+					Lexer_NextRune(lexer)
+					return {
+						kind   = info.kind,
+						loc    = start_loc,
+						length = lexer.position - start_loc.position,
+					}, nil
+				}
 			}
 
 			if kind, ok := lexer_single_tokens[last]; ok {

@@ -399,6 +399,32 @@ Binder_GetArrayType :: proc(binder: ^Binder, inner_type: ^BoundType, count: uint
 	return array_type
 }
 
+Binder_GetProcedureType :: proc(binder: ^Binder, parameters: []^BoundType, return_type: ^BoundType) -> ^BoundProcedureType {
+	// Speed this up somehow
+	for type in binder.types {
+		if procedure_type, ok := type.type_kind.(^BoundProcedureType); ok {
+			if procedure_type.return_type == return_type && len(procedure_type.parameters) == len(parameters) {
+				same := true
+				for _, i in parameters {
+					if procedure_type.parameters[i] != parameters[i] {
+						same = false
+						break
+					}
+				}
+				if same {
+					return procedure_type
+				}
+			}
+		}
+	}
+
+	procedure_type := BoundType_Create(BoundProcedureType, 8, len(binder.types))
+	procedure_type.parameters = parameters
+	procedure_type.return_type = return_type
+	append(&binder.types, procedure_type)
+	return procedure_type
+}
+
 Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundFile, error: Maybe(Error)) {
 	bound_file = BoundNode_Create(BoundFile)
 	bound_file.scope = BoundStatement_Create(BoundScope, bound_file, nil)
@@ -463,6 +489,10 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_sc
 				}
 
 				case "s64": {
+					return Binder_GetIntegerType(binder, 8, true), nil
+				}
+
+				case "int": {
 					return Binder_GetIntegerType(binder, 8, true), nil
 				}
 
@@ -547,6 +577,35 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_sc
 				loc     = binary.operator_token.loc,
 				message = "Cannot convert binary expression to type",
 			}
+		}
+
+		case ^AstProcedure: {
+			procedure := e
+			if procedure.body != nil {
+				return nil, Error{
+					loc     = procedure.open_brace_or_do.loc,
+					message = "Cannot convert procedure with body to type",
+				}
+			}
+			parameters: [dynamic]^BoundType
+			for parameter in procedure.parameters {
+				if parameter.type == nil {
+					return nil, Error{
+						loc     = parameter.colon_token.loc,
+						message = "Parameter does not have a type",
+					}
+				}
+
+				if parameter.value != nil {
+					return nil, Error{
+						loc     = parameter.equals_token.loc,
+						message = "Parameter cannot have a default value (for now)",
+					}
+				}
+
+				append(&parameters, Binder_BindAsType(binder, parameter.type, parent_scope) or_return)
+			}
+			return Binder_GetProcedureType(binder, parameters[:], Binder_BindAsType(binder, procedure.return_type, parent_scope) or_return), nil
 		}
 
 		case: {
@@ -921,6 +980,11 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 			bound_binary.binary_operator = binary_operator
 			bound_binary.right = bound_right
 			return bound_binary, nil
+		}
+
+		case ^AstProcedure: {
+			assert(false, "unimplemented")
+			return nil, Error{ message = "unimplemented" }
 		}
 
 		case: {

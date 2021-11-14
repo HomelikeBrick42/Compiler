@@ -51,8 +51,8 @@ Parser_ParseFile :: proc(parser: ^Parser) -> (file: ^AstFile, error: Maybe(Error
 }
 
 Parser_ParseScope :: proc(parser: ^Parser) -> (scope: ^AstScope, error: Maybe(Error)) {
-	Parser_ExpectToken(parser, .OpenBrace) or_return
 	scope = AstStatement_Create(AstScope)
+	scope.open_brace = Parser_ExpectToken(parser, .OpenBrace) or_return
 	for parser.current.kind != .CloseBrace && parser.current.kind != .EndOfFile {
 		statement := Parser_ParseStatement(parser) or_return
 		if parser.previous.kind != .CloseBrace || parser.current.kind == .Semicolon {
@@ -60,8 +60,34 @@ Parser_ParseScope :: proc(parser: ^Parser) -> (scope: ^AstScope, error: Maybe(Er
 		}
 		append(&scope.statements, statement)
 	}
-	Parser_ExpectToken(parser, .CloseBrace) or_return
+	scope.close_brace = Parser_ExpectToken(parser, .CloseBrace) or_return
 	return scope, nil
+}
+
+Parser_ParseDeclaration :: proc(parser: ^Parser, name_expression: ^AstExpression) -> (declaration: ^AstDeclaration, error: Maybe(Error)) {
+	declaration = AstStatement_Create(AstDeclaration)
+	declaration.colon_token = Parser_ExpectToken(parser, .Colon) or_return
+
+	name, ok := name_expression.expression_kind.(^AstName)
+	if !ok {
+		return {}, Error{
+			loc     = declaration.colon_token.loc,
+			message = fmt.tprintf("Expected name before ':' in declaration"),
+		}
+	}
+
+	declaration.name = name
+
+	if parser.current.kind != .Equals {
+		declaration.type = Parser_ParseExpression(parser) or_return
+	}
+
+	if parser.current.kind == .Equals {
+		declaration.equals_token = Parser_ExpectToken(parser, .Equals) or_return
+		declaration.value = Parser_ParseExpression(parser) or_return
+	}
+
+	return declaration, nil
 }
 
 Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, error: Maybe(Error)) {
@@ -112,29 +138,7 @@ Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, err
 			expression := Parser_ParseExpression(parser) or_return
 			#partial switch parser.current.kind {
 				case .Colon: {
-					declaration := AstStatement_Create(AstDeclaration)
-					declaration.colon_token = Parser_ExpectToken(parser, .Colon) or_return
-
-					name, ok := expression.expression_kind.(^AstName)
-					if !ok {
-						return {}, Error{
-							loc     = declaration.colon_token.loc,
-							message = fmt.tprintf("Expected name before ':' in declaration"),
-						}
-					}
-
-					declaration.name = name
-
-					if parser.current.kind != .Equals {
-						declaration.type = Parser_ParseExpression(parser) or_return
-					}
-
-					if parser.current.kind == .Equals {
-						declaration.equals_token = Parser_ExpectToken(parser, .Equals) or_return
-						declaration.value = Parser_ParseExpression(parser) or_return
-					}
-
-					return declaration, nil
+					return Parser_ParseDeclaration(parser, expression)
 				}
 
 				case .Equals, .PlusEquals, .MinusEquals, .AsteriskEquals, .SlashEquals, .PercentEquals: {
@@ -196,7 +200,35 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 
 		case .OpenParenthesis: {
 			Parser_ExpectToken(parser, .OpenParenthesis) or_return
+			if parser.current.kind == .CloseParenthesis {
+				assert(false, "unimplemented")
+			}
 			expression := Parser_ParseExpression(parser) or_return
+			if parser.current.kind == .Colon {
+				procedure := AstExpression_Create(AstProcedure)
+				append(&procedure.parameters, Parser_ParseDeclaration(parser, expression) or_return)
+				for parser.current.kind != .CloseParenthesis {
+					if parser.current.kind == .Comma {
+						Parser_ExpectToken(parser, .Comma) or_return
+						if parser.current.kind == .CloseParenthesis {
+							break
+						}
+					}
+					append(&procedure.parameters, Parser_ParseDeclaration(parser, Parser_ParseExpression(parser) or_return) or_return)
+				}
+				Parser_ExpectToken(parser, .CloseParenthesis) or_return
+				Parser_ExpectToken(parser, .RightArrow) or_return
+				procedure.return_type = Parser_ParseExpression(parser) or_return
+				if parser.current.kind == .DoKeyword {
+					procedure.open_brace_or_do = Parser_ExpectToken(parser, .DoKeyword) or_return
+					procedure.body = Parser_ParseStatement(parser) or_return
+				} else if parser.current.kind == .OpenBrace {
+					scope := Parser_ParseScope(parser) or_return
+					procedure.open_brace_or_do = scope.open_brace
+					procedure.body = scope
+				}
+				return procedure, nil
+			}
 			Parser_ExpectToken(parser, .CloseParenthesis) or_return
 			return expression, nil
 		}
