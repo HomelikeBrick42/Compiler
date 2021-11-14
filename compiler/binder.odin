@@ -354,6 +354,14 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_fi
 			}
 		}
 
+		case ^AstSizeOf: {
+			sizeof := e
+			return nil, Error{
+				loc     = sizeof.sizeof_token.loc,
+				message = "Cannot convert sizeof to type",
+			}
+		}
+
 		case ^AstTrue: {
 			truee := e
 			return nil, Error{
@@ -642,6 +650,15 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, paren
 			bound_array_index.operand = bound_operand	
 			bound_array_index.index = bound_index
 			return bound_array_index, nil
+		}
+
+		case ^AstSizeOf: {
+			sizeof := e
+			bound_operand := Binder_BindExpression(binder, sizeof.operand, parent_statement) or_return
+			integer_type  := Binder_GetIntegerType(binder, 8, true)
+			bound_integer := BoundExpression_Create(BoundInteger, integer_type, parent_statement)
+			bound_integer.value = cast(u64) bound_operand.type.size
+			return bound_integer, nil
 		}
 
 		case ^AstTrue: {

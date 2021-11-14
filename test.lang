@@ -1,8 +1,9 @@
 array: [10]s64;
+array_length := sizeof(array) / sizeof(array[0]);
 
 {
 	i := 0;
-	while i < 10 {
+	while i < array_length {
 		array[i] = (i + 1) * 2;
 		i += 1;
 	}
@@ -10,7 +11,7 @@ array: [10]s64;
 
 {
 	i := 0;
-	while i < 10 {
+	while i < array_length {
 		print array[i];
 		i += 1;
 	}

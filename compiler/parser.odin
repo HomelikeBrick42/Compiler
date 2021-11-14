@@ -173,6 +173,15 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 			return integer, nil
 		}
 
+		case .SizeOfKeyword: {
+			sizeof := AstExpression_Create(AstSizeOf)
+			sizeof.sizeof_token = Parser_ExpectToken(parser, .SizeOfKeyword) or_return
+			Parser_ExpectToken(parser, .OpenParenthesis) or_return
+			sizeof.operand = Parser_ParseExpression(parser) or_return
+			Parser_ExpectToken(parser, .CloseParenthesis) or_return
+			return sizeof, nil
+		}
+
 		case .TrueKeyword: {
 			truee := AstExpression_Create(AstTrue)
 			truee.true_token = Parser_ExpectToken(parser, .TrueKeyword) or_return

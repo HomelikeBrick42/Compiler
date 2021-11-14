@@ -131,6 +131,7 @@ EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					array_index := e
 					EmitPtr(array_index.operand, program)
 					EmitBytecode(array_index.index, program)
+					assert(array_index.index.type.size == size_of(uintptr))
 					append(program, InstPushPtr{ cast(uintptr) array_index.type.size })
 					append(program, InstMulPtr{})
 					append(program, InstAddPtr{})

@@ -97,6 +97,7 @@ AstExpression :: struct {
 		^AstInteger,
 		^AstArray,
 		^AstArrayIndex,
+		^AstSizeOf,
 		^AstTrue,
 		^AstFalse,
 		^AstUnary,
@@ -135,6 +136,12 @@ AstArrayIndex :: struct {
 	open_bracket_token: Token,
 	index: ^AstExpression,
 	close_bracket_token: Token,
+}
+
+AstSizeOf :: struct {
+	using expression: AstExpression,
+	sizeof_token: Token,
+	operand: ^AstExpression,
 }
 
 AstTrue :: struct {
