@@ -196,6 +196,28 @@ Lexer_NextToken :: proc(lexer: ^Lexer) -> (token: Token, error: Maybe(Error)) {
 		} else {
 			last := Lexer_NextRune(lexer)
 
+			if last == '/' && lexer.current == '*' {
+				depth := 1
+				for depth > 0 && lexer.current != 0 {
+					chr := Lexer_NextRune(lexer)
+					if chr == '/' && lexer.current == '*' {
+						Lexer_NextRune(lexer)
+						depth += 1
+						continue
+					} else if chr == '*' && lexer.current == '/' {
+						Lexer_NextRune(lexer)
+						depth -= 1
+						continue
+					}
+				}
+				continue
+			} else if last == '/' && lexer.current == '/' {
+				for lexer.current != '\n' && lexer.current != 0 {
+					Lexer_NextRune(lexer)
+				}
+				continue
+			}
+
 			if info, ok := lexer_double_tokens[last]; ok && lexer.current == info.second {
 				Lexer_NextRune(lexer)
 				return {
