@@ -401,6 +401,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 		case ^AstScope: {
 			scope := s
 			bound_scope := BoundStatement_Create(BoundScope, parent_file, parent_scope)
+			bound_scope.stack_offset = parent_scope.stack_size
 
 			for statement in scope.statements {
 				append(&bound_scope.statements, Binder_BindStatement(binder, statement, parent_file, bound_scope) or_return)
@@ -445,7 +446,7 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 			}
 
 			parent_scope.stack_size += bound_declaration.type.size
-			bound_declaration.stack_location = parent_scope.stack_size
+			bound_declaration.stack_location = parent_scope.stack_offset + parent_scope.stack_size
 
 			parent_scope.declarations[bound_declaration.name] = bound_declaration
 			return bound_declaration, nil

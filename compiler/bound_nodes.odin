@@ -52,6 +52,7 @@ BoundScope :: struct {
 	using statement: BoundStatement,
 	statements: [dynamic]^BoundStatement,
 	declarations: map[string]^BoundDeclaration,
+	stack_offset: uint,
 	stack_size: uint,
 	global: bool,
 }
