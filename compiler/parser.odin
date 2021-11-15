@@ -126,13 +126,6 @@ Parser_ParseStatement :: proc(parser: ^Parser) -> (statement: ^AstStatement, err
 			return whilee, nil
 		}
 
-		case .ReturnKeyword: {
-			returnn := AstStatement_Create(AstReturn)
-			returnn.return_token = Parser_ExpectToken(parser, .ReturnKeyword) or_return
-			returnn.expression = Parser_ParseExpression(parser) or_return
-			return returnn, nil
-		}
-
 		// This is temporary
 		case .PrintKeyword: {
 			print := AstStatement_Create(AstPrint)
@@ -206,27 +199,24 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 		}
 
 		case .OpenParenthesis: {
-			open_parenthesis_token := Parser_ExpectToken(parser, .OpenParenthesis) or_return
+			Parser_ExpectToken(parser, .OpenParenthesis) or_return
 			if parser.current.kind == .CloseParenthesis {
 				assert(false, "unimplemented")
 			}
 			expression := Parser_ParseExpression(parser) or_return
 			if parser.current.kind == .Colon {
 				procedure := AstExpression_Create(AstProcedure)
-				procedure.open_parenthesis_token = open_parenthesis_token
-				parameters: [dynamic]^AstDeclaration
-				append(&parameters, Parser_ParseDeclaration(parser, expression) or_return)
-				for parser.current.kind != .CloseParenthesis && parser.current.kind != .EndOfFile {
+				append(&procedure.parameters, Parser_ParseDeclaration(parser, expression) or_return)
+				for parser.current.kind != .CloseParenthesis {
 					if parser.current.kind == .Comma {
 						Parser_ExpectToken(parser, .Comma) or_return
 						if parser.current.kind == .CloseParenthesis {
 							break
 						}
 					}
-					append(&parameters, Parser_ParseDeclaration(parser, Parser_ParseExpression(parser) or_return) or_return)
+					append(&procedure.parameters, Parser_ParseDeclaration(parser, Parser_ParseExpression(parser) or_return) or_return)
 				}
 				Parser_ExpectToken(parser, .CloseParenthesis) or_return
-				procedure.parameters = parameters[:]
 				Parser_ExpectToken(parser, .RightArrow) or_return
 				procedure.return_type = Parser_ParseExpression(parser) or_return
 				if parser.current.kind == .DoKeyword {
@@ -331,23 +321,6 @@ Parser_ParseBinaryExpression :: proc(parser: ^Parser, parent_precedence: uint) -
 			array_index.index = Parser_ParseExpression(parser) or_return
 			array_index.close_bracket_token = Parser_ExpectToken(parser, .CloseBracket) or_return
 			expression = array_index
-		} if parser.current.kind == .OpenParenthesis {
-			call := AstExpression_Create(AstCall)
-			call.operand = expression
-			call.open_parenthesis_token = Parser_ExpectToken(parser, .OpenParenthesis) or_return
-			arguments: [dynamic]^AstExpression
-			for parser.current.kind != .CloseParenthesis && parser.current.kind != .EndOfFile {
-				if parser.current.kind == .Comma {
-					Parser_ExpectToken(parser, .Comma) or_return
-					if parser.current.kind == .CloseParenthesis {
-						break
-					}
-				}
-				append(&arguments, Parser_ParseExpression(parser) or_return)
-			}
-			call.close_parenthesis_token = Parser_ExpectToken(parser, .CloseParenthesis) or_return
-			call.arguments = arguments[:]
-			expression = call
 		} else {
 			binary_precedence := GetBinaryOperatorPrecedence(parser.current.kind)
 			if binary_precedence <= parent_precedence {

@@ -319,11 +319,6 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, binary.binary_operator.operation)
 				}
 
-				case ^BoundProcedure: {
-					procedure := e
-					assert(false, "unimplemented")
-				}
-
 				case: {
 					assert(false, "unreachable BoundExpression default case in EmitBytecode")
 				}

@@ -431,7 +431,7 @@ Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundF
 	bound_file.scope.global = true
 
 	for statement in file.statements {
-		append(&bound_file.scope.statements, Binder_BindStatement(binder, statement, bound_file, bound_file.scope, nil) or_return)
+		append(&bound_file.scope.statements, Binder_BindStatement(binder, statement, bound_file, bound_file.scope) or_return)
 	}
 
 	return bound_file, nil
@@ -468,10 +468,6 @@ Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 		}
 
 		case ^BoundBinary: {
-			return false
-		}
-
-		case ^BoundProcedure: {
 			return false
 		}
 
@@ -612,14 +608,6 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_sc
 			return Binder_GetProcedureType(binder, parameters[:], Binder_BindAsType(binder, procedure.return_type, parent_scope) or_return), nil
 		}
 
-		case ^AstCall: {
-			call := e
-			return nil, Error{
-				loc     = call.open_parenthesis_token.loc,
-				message = "Cannot convert call to type",
-			}
-		}
-
 		case: {
 			message := "unreachable default case in Binder_BindAsType"
 			assert(false, message)
@@ -630,16 +618,15 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_sc
 	}
 }
 
-Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_file: ^BoundFile, parent_scope: ^BoundScope, parent_procedure: ^BoundProcedure) -> (bound_statement: ^BoundStatement, error: Maybe(Error)) {
+Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_file: ^BoundFile, parent_scope: ^BoundScope) -> (bound_statement: ^BoundStatement, error: Maybe(Error)) {
 	switch s in statement.statement_kind {
 		case ^AstScope: {
 			scope := s
 			bound_scope := BoundStatement_Create(BoundScope, parent_file, parent_scope)
 			bound_scope.stack_offset = parent_scope.stack_size
-			bound_scope.parent_procedure = parent_procedure
 
 			for statement in scope.statements {
-				append(&bound_scope.statements, Binder_BindStatement(binder, statement, parent_file, bound_scope, parent_procedure) or_return)
+				append(&bound_scope.statements, Binder_BindStatement(binder, statement, parent_file, bound_scope) or_return)
 			}
 
 			return bound_scope, nil
@@ -760,9 +747,9 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 					),
 				}
 			}
-			bound_if.then_statement = Binder_BindStatement(binder, iff.then_statement, parent_file, parent_scope, parent_procedure) or_return
+			bound_if.then_statement = Binder_BindStatement(binder, iff.then_statement, parent_file, parent_scope) or_return
 			if iff.else_statement != nil {
-				bound_if.else_statement = Binder_BindStatement(binder, iff.else_statement, parent_file, parent_scope, parent_procedure) or_return
+				bound_if.else_statement = Binder_BindStatement(binder, iff.else_statement, parent_file, parent_scope) or_return
 			}
 			return bound_if, nil
 		}
@@ -780,14 +767,8 @@ Binder_BindStatement :: proc(binder: ^Binder, statement: ^AstStatement, parent_f
 					),
 				}
 			}
-			bound_while.then_statement = Binder_BindStatement(binder, whilee.then_statement, parent_file, parent_scope, parent_procedure) or_return
+			bound_while.then_statement = Binder_BindStatement(binder, whilee.then_statement, parent_file, parent_scope) or_return
 			return bound_while, nil
-		}
-
-		case ^AstReturn: {
-			returnn := s
-			assert(false, "unimplemented")
-			return nil, Error{ message = "unimplemented" }
 		}
 
 		// This is temporary
@@ -1002,54 +983,6 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 		}
 
 		case ^AstProcedure: {
-			procedure := e
-
-			if procedure.body == nil {
-				return nil, Error{
-					loc     = procedure.open_parenthesis_token.loc,
-					message = "Cannot use procedure type outside of type context (for now)",
-				}
-			}
-
-			parameters: [dynamic]^BoundType
-			for parameter in procedure.parameters {
-				if parameter.type == nil {
-					return nil, Error{
-						loc     = parameter.colon_token.loc,
-						message = "Parameter does not have a type",
-					}
-				}
-
-				if parameter.value != nil {
-					return nil, Error{
-						loc     = parameter.equals_token.loc,
-						message = "Parameter cannot have a default value (for now)",
-					}
-				}
-
-				append(&parameters, Binder_BindAsType(binder, parameter.type, parent_statement.parent_scope) or_return)
-			}
-
-			return_type := Binder_BindAsType(binder, procedure.return_type, parent_statement.parent_scope) or_return
-
-			type := Binder_GetProcedureType(binder, parameters[:], return_type)
-
-			bound_procedure := BoundExpression_Create(BoundProcedure, type, parent_statement)
-
-			if _, ok := procedure.body.statement_kind.(^AstScope); !ok {
-				return nil, Error{
-					loc     = procedure.open_brace_or_do.loc,
-					message = "unimplemented do for procedure body",
-				}
-			} else {
-				scope := Binder_BindStatement(binder, procedure.body, parent_statement.parent_file, parent_statement.parent_scope, bound_procedure) or_return
-				bound_procedure.body = scope.statement_kind.(^BoundScope)
-			}
-
-			return bound_procedure, nil
-		}
-
-		case ^AstCall: {
 			assert(false, "unimplemented")
 			return nil, Error{ message = "unimplemented" }
 		}
