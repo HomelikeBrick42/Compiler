@@ -174,7 +174,6 @@ BoundType :: struct {
 		^BoundIntegerType,
 		^BoundBoolType,
 		^BoundArrayType,
-		^BoundProcedureType,
 	},
 }
 
@@ -200,12 +199,6 @@ BoundArrayType :: struct {
 	using type: BoundType,
 	count: uint,
 	inner_type: ^BoundType,
-}
-
-BoundProcedureType :: struct {
-	using type: BoundType,
-	parameters: []^BoundType,
-	return_type: ^BoundType,
 }
 
 BoundNode_ToString :: proc(bound_node: ^BoundNode, allocator := context.allocator) -> string {
@@ -393,19 +386,6 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					array_type := t
 					strings.write_string(builder, fmt.tprintf("[{}]", array_type.count))
 					BoundNode_Print(array_type.inner_type, indent, builder)
-				}
-
-				case ^BoundProcedureType: {
-					procedure_type := t
-					strings.write_string(builder, "(")
-					for type, i in procedure_type.parameters {
-						if i != 0 {
-							strings.write_string(builder, ", ")
-						}
-						BoundNode_Print(type, indent, builder)
-					}
-					strings.write_string(builder, ") -> ")
-					BoundNode_Print(procedure_type.return_type, indent, builder)
 				}
 
 				case: {

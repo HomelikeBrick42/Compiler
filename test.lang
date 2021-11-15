@@ -1,16 +1,18 @@
-fib: (n: int) -> int;
+array: [10]u8;
+array_length := sizeof(array) / sizeof(array[0]);
 
-/*
-fib = (n: int) -> int {
-	if n <= 2 {
-		return n;
-	} else {
-		return fib(n - 1) + fib(n - 2);
+{
+	i := 0;
+	while i < array_length {
+		array[i] = cast(u8) (i + 1) * 2;
+		i += 1;
 	}
 }
 
-i := 0;
-while i < 10 {
-	print fib(i);
+{
+	i := 0;
+	while i < array_length {
+		print array[i];
+		i += 1;
+	}
 }
-*/

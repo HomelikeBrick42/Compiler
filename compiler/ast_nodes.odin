@@ -43,9 +43,7 @@ AstStatement_Create :: proc($T: typeid) -> ^T {
 
 AstScope :: struct {
 	using statement: AstStatement,
-	open_brace: Token,
 	statements: [dynamic]^AstStatement,
-	close_brace: Token,
 }
 
 AstDeclaration :: struct {
@@ -105,7 +103,6 @@ AstExpression :: struct {
 		^AstFalse,
 		^AstUnary,
 		^AstBinary,
-		^AstProcedure,
 	},
 }
 
@@ -176,12 +173,4 @@ AstBinary :: struct {
 	left: ^AstExpression,
 	operator_token: Token,
 	right: ^AstExpression,
-}
-
-AstProcedure :: struct {
-	using expression: AstExpression,
-	parameters: [dynamic]^AstDeclaration,
-	return_type: ^AstExpression,
-	open_brace_or_do: Token,
-	body: ^AstStatement,
 }
