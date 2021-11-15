@@ -30,6 +30,7 @@ AstStatement :: struct {
 		^AstStatementExpression,
 		^AstIf,
 		^AstWhile,
+		^AstReturn,
 		^AstPrint,
 	},
 }
@@ -85,6 +86,12 @@ AstWhile :: struct {
 	then_statement: ^AstStatement,
 }
 
+AstReturn :: struct {
+	using statement: AstStatement,
+	return_token: Token,
+	expression: ^AstExpression,
+}
+
 // This is temporary
 AstPrint :: struct {
 	using statement: AstStatement,
@@ -106,6 +113,7 @@ AstExpression :: struct {
 		^AstUnary,
 		^AstBinary,
 		^AstProcedure,
+		^AstCall,
 	},
 }
 
@@ -180,8 +188,17 @@ AstBinary :: struct {
 
 AstProcedure :: struct {
 	using expression: AstExpression,
-	parameters: [dynamic]^AstDeclaration,
+	open_parenthesis_token: Token,
+	parameters: []^AstDeclaration,
 	return_type: ^AstExpression,
 	open_brace_or_do: Token,
 	body: ^AstStatement,
+}
+
+AstCall :: struct {
+	using expression: AstExpression,
+	operand: ^AstExpression,
+	open_parenthesis_token: Token,
+	arguments: []^AstExpression,
+	close_parenthesis_token: Token,
 }

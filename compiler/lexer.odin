@@ -57,6 +57,7 @@ lexer_keywords := map[string]TokenKind{
 	"while"  = .WhileKeyword,
 	"sizeof" = .SizeOfKeyword,
 	"cast"   = .CastKeyword,
+	"return" = .ReturnKeyword,
 }
 
 Lexer :: struct {

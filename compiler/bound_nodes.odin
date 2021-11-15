@@ -54,6 +54,7 @@ BoundScope :: struct {
 	declarations: map[string]^BoundDeclaration,
 	stack_offset: uint,
 	stack_size: uint,
+	parent_procedure: ^BoundProcedure,
 	global: bool,
 }
 
@@ -110,6 +111,7 @@ BoundExpression :: struct {
 		^BoundFalse,
 		^BoundUnary,
 		^BoundBinary,
+		^BoundProcedure,
 	},
 }
 
@@ -164,6 +166,11 @@ BoundBinary :: struct {
 	left: ^BoundExpression,
 	binary_operator: ^BinaryOperator,
 	right: ^BoundExpression,
+}
+
+BoundProcedure :: struct {
+	using expression: BoundExpression,
+	body: ^BoundScope,
 }
 
 BoundType :: struct {
@@ -368,6 +375,11 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					strings.write_string(builder, " ")
 					BoundNode_Print(binary.right, indent, builder)
 					strings.write_string(builder, ")")
+				}
+
+				case ^BoundProcedure: {
+					procedure := e
+					assert(false, "unimplemented printing of procedure")
 				}
 
 				case: {
