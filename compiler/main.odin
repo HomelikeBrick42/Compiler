@@ -137,6 +137,11 @@ EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, InstAddPtr{})
 				}
 
+				case ^BoundDeref: {
+					deref := e
+					EmitBytecode(deref.operand, program)
+				}
+
 				case: {
 					assert(false, "unreachable BoundExpression default case in EmitPtr")
 				}
@@ -186,7 +191,12 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					}
 					EmitBytecode(assignment.value, program)
 					if assignment.binary_operator != nil {
-						append(program, assignment.binary_operator.operation)
+						for operation in assignment.binary_operator.operations {
+							if operation == nil {
+								break
+							}
+							append(program, operation)
+						}
 					}
 					EmitPtr(assignment.operand, program)
 					append(program, InstStorePtr{ assignment.operand.type.size })
@@ -290,6 +300,17 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, InstLoadPtr{ array_index.type.size })
 				}
 
+				case ^BoundAddress: {
+					address := e
+					EmitPtr(address.operand, program)
+				}
+
+				case ^BoundDeref: {
+					deref := e
+					EmitBytecode(deref.operand, program)
+					append(program, InstLoadPtr{ deref.type.size })
+				}
+
 				case ^BoundCast: {
 					castt := e
 					EmitBytecode(castt.operand, program)
@@ -316,7 +337,12 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					binary := e
 					EmitBytecode(binary.left, program)
 					EmitBytecode(binary.right, program)
-					append(program, binary.binary_operator.operation)
+					for operation in binary.binary_operator.operations {
+						if operation == nil {
+							break
+						}
+						append(program, operation)
+					}
 				}
 
 				case: {

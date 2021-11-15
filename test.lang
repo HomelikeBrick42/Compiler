@@ -1,18 +1,14 @@
-array: [10]u8;
+array: [10]s64;
 array_length := sizeof(array) / sizeof(array[0]);
 
-{
-	i := 0;
-	while i < array_length {
-		array[i] = cast(u8) (i + 1) * 2;
-		i += 1;
-	}
+i := 0;
+while i < array_length {
+	array[i] = i * 2;
+	i += 1;
 }
 
-{
-	i := 0;
-	while i < array_length {
-		print array[i];
-		i += 1;
-	}
+ptr := *array[0];
+while ptr < *array[0] + array_length {
+	print ptr^;
+	ptr += 1;
 }

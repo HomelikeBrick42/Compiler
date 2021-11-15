@@ -317,6 +317,42 @@ VM_Run :: proc(vm: ^VM) -> Maybe(string) {
 				VM_Push(vm, a * b)
 			}
 
+			case InstEqualPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a == b)
+			}
+
+			case InstNotEqualPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a != b)
+			}
+
+			case InstLessThanPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a < b)
+			}
+
+			case InstLessThanEqualPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a <= b)
+			}
+
+			case InstGreaterThanPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a > b)
+			}
+
+			case InstGreaterThanEqualPtr: {
+				b := VM_Pop(vm, uintptr)
+				a := VM_Pop(vm, uintptr)
+				VM_Push(vm, a >= b)
+			}
+
 			case InstPrintPtr: {
 				value := VM_Pop(vm, rawptr)
 				fmt.println(value)

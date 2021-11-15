@@ -105,6 +105,8 @@ BoundExpression :: struct {
 		^BoundName,
 		^BoundInteger,
 		^BoundArrayIndex,
+		^BoundAddress,
+		^BoundDeref,
 		^BoundCast,
 		^BoundTrue,
 		^BoundFalse,
@@ -137,6 +139,16 @@ BoundArrayIndex :: struct {
 	using expression: BoundExpression,
 	operand: ^BoundExpression,
 	index: ^BoundExpression,
+}
+
+BoundAddress :: struct {
+	using expression: BoundExpression,
+	operand: ^BoundExpression,
+}
+
+BoundDeref :: struct {
+	using expression: BoundExpression,
+	operand: ^BoundExpression,
 }
 
 BoundCast :: struct {
@@ -174,6 +186,7 @@ BoundType :: struct {
 		^BoundIntegerType,
 		^BoundBoolType,
 		^BoundArrayType,
+		^BoundPointerType,
 	},
 }
 
@@ -198,6 +211,11 @@ BoundBoolType :: struct {
 BoundArrayType :: struct {
 	using type: BoundType,
 	count: uint,
+	inner_type: ^BoundType,
+}
+
+BoundPointerType :: struct {
+	using type: BoundType,
 	inner_type: ^BoundType,
 }
 
@@ -326,6 +344,18 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					strings.write_string(builder, ")")
 				}
 
+				case ^BoundAddress: {
+					address := e
+					strings.write_string(builder, "*")
+					BoundNode_Print(address.operand, indent, builder)
+				}
+
+				case ^BoundDeref: {
+					deref := e
+					BoundNode_Print(deref.operand, indent, builder)
+					strings.write_string(builder, "^")
+				}
+
 				case ^BoundCast: {
 					castt := e
 					strings.write_string(builder, "cast(")
@@ -386,6 +416,12 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					array_type := t
 					strings.write_string(builder, fmt.tprintf("[{}]", array_type.count))
 					BoundNode_Print(array_type.inner_type, indent, builder)
+				}
+
+				case ^BoundPointerType: {
+					pointer_type := t
+					strings.write_string(builder, "^")
+					BoundNode_Print(pointer_type.inner_type, indent, builder)
 				}
 
 				case: {

@@ -56,6 +56,12 @@ Instruction :: union {
 	InstAddPtr,
 	InstSubPtr,
 	InstMulPtr,
+	InstEqualPtr,
+	InstNotEqualPtr,
+	InstLessThanPtr,
+	InstLessThanEqualPtr,
+	InstGreaterThanPtr,
+	InstGreaterThanEqualPtr,
 	InstPrintPtr,
 
 	InstS64ToU8,
@@ -113,11 +119,17 @@ InstEqualBool    :: struct {}
 InstNotEqualBool :: struct {}
 InstPrintBool    :: struct {}
 
-InstPushPtr      :: struct { value: uintptr }
-InstAddPtr       :: struct {}
-InstSubPtr       :: struct {}
-InstMulPtr       :: struct {}
-InstPrintPtr     :: struct {}
+InstPushPtr      		:: struct { value: uintptr }
+InstAddPtr       		:: struct {}
+InstSubPtr       		:: struct {}
+InstMulPtr       		:: struct {}
+InstEqualPtr            :: struct {}
+InstNotEqualPtr         :: struct {}
+InstLessThanPtr         :: struct {}
+InstLessThanEqualPtr    :: struct {}
+InstGreaterThanPtr      :: struct {}
+InstGreaterThanEqualPtr :: struct {}
+InstPrintPtr    		:: struct {}
 
 InstU8ToS64 :: struct {}
 InstS64ToU8 :: struct {}

@@ -11,7 +11,7 @@ UnaryOperator :: struct {
 
 BinaryOperator :: struct {
 	operator_kind: TokenKind,
-	operation: Instruction,
+	operations: [3]Instruction,
 	left_type: ^BoundType,
 	right_type: ^BoundType,
 	result_type: ^BoundType,

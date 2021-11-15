@@ -15,6 +15,7 @@ lexer_single_tokens := map[rune]TokenKind{
 	']' = .CloseBracket,
 	':' = .Colon,
 	';' = .Semicolon,
+	'^' = .Caret,
 
 	'+' = .Plus,
 	'-' = .Minus,

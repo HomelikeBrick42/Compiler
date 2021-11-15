@@ -19,18 +19,7 @@ Binder :: struct {
 Binder_Create :: proc() -> Binder {
 	binder: Binder
 
-	AddUnary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, operand_type: ^BoundType, result_type: ^BoundType) {
-		operator := new(UnaryOperator)
-		operator^ = UnaryOperator{
-			operator_kind = kind,
-			operation     = operation,
-			operand_type  = operand_type,
-			result_type   = result_type,
-		}
-		append(&binder.unary_operators, operator)
-	}
-
-	AddUnary(
+	Binder_AddUnary(
 		&binder,
 		.Plus,
 		InstNoOp{},
@@ -38,7 +27,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddUnary(
+	Binder_AddUnary(
 		&binder,
 		.Minus,
 		InstNegateS64{},
@@ -46,7 +35,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddUnary(
+	Binder_AddUnary(
 		&binder,
 		.ExclamationMark,
 		InstNegateBool{},
@@ -54,19 +43,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, left_type: ^BoundType, right_type: ^BoundType, result_type: ^BoundType) {
-		operator := new(BinaryOperator)
-		operator^ = BinaryOperator{
-			operator_kind = kind,
-			operation     = operation,
-			left_type     = left_type,
-			right_type    = right_type,
-			result_type   = result_type,
-		}
-		append(&binder.binary_operators, operator)
-	}
-
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Plus,
 		InstAddS64{},
@@ -75,7 +52,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Minus,
 		InstSubS64{},
@@ -84,7 +61,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Asterisk,
 		InstMulS64{},
@@ -93,7 +70,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Slash,
 		InstDivS64{},
@@ -102,7 +79,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Percent,
 		InstModS64{},
@@ -111,7 +88,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Percent,
 		InstModS64{},
@@ -120,7 +97,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 8, true),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.EqualsEquals,
 		InstEqualS64{},
@@ -129,7 +106,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.ExclamationMarkEquals,
 		InstNotEqualS64{},
@@ -138,7 +115,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.LessThan,
 		InstLessThanS64{},
@@ -147,7 +124,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.LessThanEquals,
 		InstLessThanEqualS64{},
@@ -156,7 +133,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.GreaterThan,
 		InstGreaterThanS64{},
@@ -165,7 +142,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.GreaterThanEquals,
 		InstGreaterThanEqualS64{},
@@ -174,7 +151,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Plus,
 		InstAddU8{},
@@ -183,7 +160,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Minus,
 		InstSubU8{},
@@ -192,7 +169,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Asterisk,
 		InstMulU8{},
@@ -201,7 +178,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Slash,
 		InstDivU8{},
@@ -210,7 +187,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Percent,
 		InstModU8{},
@@ -219,7 +196,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.Percent,
 		InstModU8{},
@@ -228,7 +205,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.EqualsEquals,
 		InstEqualU8{},
@@ -237,7 +214,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.ExclamationMarkEquals,
 		InstNotEqualU8{},
@@ -246,7 +223,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.LessThan,
 		InstLessThanU8{},
@@ -255,7 +232,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.LessThanEquals,
 		InstLessThanEqualU8{},
@@ -264,7 +241,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.GreaterThan,
 		InstGreaterThanU8{},
@@ -273,7 +250,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.GreaterThanEquals,
 		InstGreaterThanEqualU8{},
@@ -282,7 +259,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.EqualsEquals,
 		InstEqualBool{},
@@ -291,7 +268,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.ExclamationMarkEquals,
 		InstNotEqualBool{},
@@ -300,7 +277,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.AmpersandAmpersand,
 		InstAndBool{},
@@ -309,7 +286,7 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddBinary(
+	Binder_AddBinary(
 		&binder,
 		.PipePipe,
 		InstOrBool{},
@@ -318,24 +295,14 @@ Binder_Create :: proc() -> Binder {
 		Binder_GetBoolType(&binder),
 	)
 
-	AddCast :: proc(binder: ^Binder, operation: Instruction, from: ^BoundType, to: ^BoundType) {
-		castt := new(Cast)
-		castt^ = Cast{
-			from      = from,
-			to        = to,
-			operation = operation,
-		}
-		append(&binder.casts, castt)
-	}
-
-	AddCast(
+	Binder_AddCast(
 		&binder,
 		InstS64ToU8{},
 		Binder_GetIntegerType(&binder, 8, true),
 		Binder_GetIntegerType(&binder, 1, false),
 	)
 
-	AddCast(
+	Binder_AddCast(
 		&binder,
 		InstU8ToS64{},
 		Binder_GetIntegerType(&binder, 1, false),
@@ -349,6 +316,39 @@ Binder_Destroy :: proc(binder: ^Binder) {
 	delete(binder.types)
 	delete(binder.unary_operators)
 	delete(binder.binary_operators)
+}
+
+Binder_AddUnary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, operand_type: ^BoundType, result_type: ^BoundType) {
+	operator := new(UnaryOperator)
+	operator^ = UnaryOperator{
+		operator_kind = kind,
+		operation     = operation,
+		operand_type  = operand_type,
+		result_type   = result_type,
+	}
+	append(&binder.unary_operators, operator)
+}
+
+Binder_AddBinary :: proc(binder: ^Binder, kind: TokenKind, operation: Instruction, left_type: ^BoundType, right_type: ^BoundType, result_type: ^BoundType) {
+	operator := new(BinaryOperator)
+	operator^ = BinaryOperator{
+		operator_kind = kind,
+		operations    = { operation, nil, nil },
+		left_type     = left_type,
+		right_type    = right_type,
+		result_type   = result_type,
+	}
+	append(&binder.binary_operators, operator)
+}
+
+Binder_AddCast :: proc(binder: ^Binder, operation: Instruction, from: ^BoundType, to: ^BoundType) {
+	castt := new(Cast)
+	castt^ = Cast{
+		from      = from,
+		to        = to,
+		operation = operation,
+	}
+	append(&binder.casts, castt)
 }
 
 Binder_GetIntegerType :: proc(binder: ^Binder, size: uint, signed: bool) -> ^BoundIntegerType {
@@ -399,6 +399,110 @@ Binder_GetArrayType :: proc(binder: ^Binder, inner_type: ^BoundType, count: uint
 	return array_type
 }
 
+Binder_GetPointerType :: proc(binder: ^Binder, inner_type: ^BoundType) -> ^BoundPointerType {
+	// Speed this up somehow
+	for type in binder.types {
+		if pointer_type, ok := type.type_kind.(^BoundPointerType); ok {
+			if pointer_type.inner_type == inner_type {
+				return pointer_type
+			}
+		}
+	}
+
+	pointer_type := BoundType_Create(BoundPointerType, 8, len(binder.types))
+	pointer_type.inner_type = inner_type
+	append(&binder.types, pointer_type)
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .Plus,
+			operations    = { InstPushPtr{ cast(uintptr) pointer_type.inner_type.size }, InstMulPtr{}, InstAddPtr{} },
+			left_type     = pointer_type,
+			right_type    = Binder_GetIntegerType(binder, 8, true),
+			result_type   = pointer_type,
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .Minus,
+			operations    = { InstPushPtr{ cast(uintptr) pointer_type.inner_type.size }, InstMulPtr{}, InstSubPtr{} },
+			left_type     = pointer_type,
+			right_type    = Binder_GetIntegerType(binder, 8, true),
+			result_type   = pointer_type,
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .EqualsEquals,
+			operations    = { InstEqualPtr{}, nil, nil },
+			left_type     = pointer_type,
+			right_type    = pointer_type,
+			result_type   = Binder_GetBoolType(binder),
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .ExclamationMarkEquals,
+			operations    = { InstNotEqualPtr{}, nil, nil },
+			left_type     = pointer_type,
+			right_type    = pointer_type,
+			result_type   = Binder_GetBoolType(binder),
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .LessThan,
+			operations    = { InstLessThanPtr{}, nil, nil },
+			left_type     = pointer_type,
+			right_type    = pointer_type,
+			result_type   = Binder_GetBoolType(binder),
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .LessThanEquals,
+			operations    = { InstLessThanEqualPtr{}, nil, nil },
+			left_type     = pointer_type,
+			right_type    = pointer_type,
+			result_type   = Binder_GetBoolType(binder),
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .GreaterThan,
+			operations    = { InstGreaterThanPtr{}, nil, nil },
+			left_type     = pointer_type,
+			right_type    = pointer_type,
+			result_type   = Binder_GetBoolType(binder),
+		}
+		append(&binder.binary_operators, operator)
+	}
+	{
+		operator := new(BinaryOperator)
+		operator^ = BinaryOperator{
+			operator_kind = .GreaterThanEquals,
+			operations    = { InstGreaterThanEqualPtr{}, nil, nil },
+			left_type     = pointer_type,
+			right_type    = pointer_type,
+			result_type   = Binder_GetBoolType(binder),
+		}
+		append(&binder.binary_operators, operator)
+	}
+	return pointer_type
+}
+
 Binder_BindFile :: proc(binder: ^Binder, file: ^AstFile) -> (bound_file: ^BoundFile, error: Maybe(Error)) {
 	bound_file = BoundNode_Create(BoundFile)
 	bound_file.scope = BoundStatement_Create(BoundScope, bound_file, nil)
@@ -425,6 +529,14 @@ Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 			return true
 		}
 
+		case ^BoundAddress: {
+			return false
+		}
+
+		case ^BoundDeref: {
+			return true
+		}
+
 		case ^BoundCast: {
 			return false
 		}
@@ -447,6 +559,55 @@ Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 
 		case: {
 			assert(false, "unreachable default case in Binder_IsAssignable")
+			return false
+		}
+	}
+}
+
+Binder_IsAddresable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bool {
+	switch e in expression.expression_kind {
+		case ^BoundName: {
+			return true
+		}
+
+		case ^BoundInteger: {
+			return false
+		}
+
+		case ^BoundArrayIndex: {
+			return true
+		}
+
+		case ^BoundAddress: {
+			return false
+		}
+
+		case ^BoundDeref: {
+			return true
+		}
+
+		case ^BoundCast: {
+			return false
+		}
+
+		case ^BoundTrue: {
+			return false
+		}
+
+		case ^BoundFalse: {
+			return false
+		}
+
+		case ^BoundUnary: {
+			return false
+		}
+
+		case ^BoundBinary: {
+			return false
+		}
+
+		case: {
+			assert(false, "unreachable default case in Binder_IsAddresable")
 			return false
 		}
 	}
@@ -491,6 +652,28 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_sc
 			array := e
 			inner_type := Binder_BindAsType(binder, array.type, parent_scope) or_return
 			return Binder_GetArrayType(binder, inner_type, array.count), nil
+		}
+
+		case ^AstPointer: {
+			pointer := e
+			inner_type := Binder_BindAsType(binder, pointer.type, parent_scope) or_return
+			return Binder_GetPointerType(binder, inner_type), nil
+		}
+
+		case ^AstAddress: {
+			address := e
+			return nil, Error{
+				loc     = address.asterisk_token.loc,
+				message = "Cannot convert address to type",
+			}
+		}
+
+		case ^AstDeref: {
+			deref := e
+			return nil, Error{
+				loc     = deref.caret_token.loc,
+				message = "Cannot convert deref to type",
+			}
 		}
 
 		case ^AstArrayIndex: {
@@ -784,6 +967,46 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 			}
 		}
 
+		case ^AstPointer: {
+			pointer := e
+			return nil, Error{
+				loc     = pointer.caret_token.loc,
+				message = "Cannot declare pointer type outside of type context (for now)",
+			}
+		}
+
+		case ^AstAddress: {
+			address := e
+			bound_operand := Binder_BindExpression(binder, address.operand, nil, parent_statement) or_return
+			if !Binder_IsAddresable(binder, bound_operand) {
+				return nil, Error{
+					loc     = address.asterisk_token.loc,
+					message = "Operand is not addresable",
+				}
+			}
+			bound_address := BoundExpression_Create(BoundAddress, Binder_GetPointerType(binder, bound_operand.type), parent_statement)
+			bound_address.operand = bound_operand
+			return bound_address, nil
+		}
+
+		case ^AstDeref: {
+			deref := e
+			bound_operand := Binder_BindExpression(binder, deref.operand, nil, parent_statement) or_return
+			pointer_type, ok := bound_operand.type.type_kind.(^BoundPointerType)
+			if !ok {
+				return nil, Error{
+					loc     = deref.caret_token.loc,
+					message = fmt.tprintf(
+						"Cannot deref type '{}'",
+						BoundNode_ToString(bound_operand.type, context.temp_allocator),
+					),
+				}
+			}
+			bound_deref := BoundExpression_Create(BoundDeref, pointer_type.inner_type, parent_statement)
+			bound_deref.operand = bound_operand
+			return bound_deref, nil
+		}
+
 		case ^AstArrayIndex: {
 			array_index := e
 			bound_operand := Binder_BindExpression(binder, array_index.operand, nil, parent_statement) or_return
@@ -837,6 +1060,17 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 			for castt in binder.casts {
 				if castt.from == bound_operand.type && castt.to == type {
 					cast_type = castt
+					break
+				}
+			}
+			if cast_type == nil {
+				return nil, Error{
+					loc     = castt.cast_token.loc,
+					message = fmt.tprintf(
+						"Cannot cast type '{}' to type '{}'",
+						BoundNode_ToString(bound_operand.type, context.temp_allocator),
+						BoundNode_ToString(type, context.temp_allocator),
+					),
 				}
 			}
 			bound_cast := BoundExpression_Create(BoundCast, type, parent_statement)

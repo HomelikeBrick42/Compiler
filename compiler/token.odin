@@ -25,6 +25,7 @@ TokenKind :: enum {
 	CloseBracket,
 	Colon,
 	Semicolon,
+	Caret,
 
 	Plus,
 	Minus,

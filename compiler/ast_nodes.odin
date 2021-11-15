@@ -96,6 +96,9 @@ AstExpression :: struct {
 		^AstName,
 		^AstInteger,
 		^AstArray,
+		^AstPointer,
+		^AstAddress,
+		^AstDeref,
 		^AstArrayIndex,
 		^AstSizeOf,
 		^AstCast,
@@ -129,6 +132,24 @@ AstArray :: struct {
 	close_bracket_token: Token,
 	count: uint,
 	type: ^AstExpression,
+}
+
+AstPointer :: struct {
+	using expression: AstExpression,
+	caret_token: Token,
+	type: ^AstExpression,
+}
+
+AstAddress :: struct {
+	using expression: AstExpression,
+	asterisk_token: Token,
+	operand: ^AstExpression,
+}
+
+AstDeref :: struct {
+	using expression: AstExpression,
+	operand: ^AstExpression,
+	caret_token: Token,
 }
 
 AstArrayIndex :: struct {
