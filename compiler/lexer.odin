@@ -48,15 +48,16 @@ lexer_double_tokens := map[rune]struct{
 
 @(private="file")
 lexer_keywords := map[string]TokenKind{
-	"print"  = .PrintKeyword, // This is temporary
-	"if"     = .IfKeyword,
-	"else"   = .ElseKeyword,
-	"do"     = .DoKeyword,
-	"true"   = .TrueKeyword,
-	"false"  = .FalseKeyword,
-	"while"  = .WhileKeyword,
-	"sizeof" = .SizeOfKeyword,
-	"cast"   = .CastKeyword,
+	"print"     = .PrintKeyword, // This is temporary
+	"if"        = .IfKeyword,
+	"else"      = .ElseKeyword,
+	"do"        = .DoKeyword,
+	"true"      = .TrueKeyword,
+	"false"     = .FalseKeyword,
+	"while"     = .WhileKeyword,
+	"sizeof"    = .SizeOfKeyword,
+	"cast"      = .CastKeyword,
+	"transmute" = .TransmuteKeyword,
 }
 
 Lexer :: struct {

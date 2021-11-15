@@ -317,6 +317,11 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					append(program, castt.castt.operation)
 				}
 
+				case ^BoundTransmute: {
+					transmutee := e
+					EmitBytecode(transmutee.operand, program)
+				}
+
 				case ^BoundTrue: {
 					truee := e
 					append(program, InstPushBool{ true })

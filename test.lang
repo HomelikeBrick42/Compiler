@@ -9,6 +9,7 @@ while i < array_length {
 
 ptr := *array[0];
 while ptr < *array[0] + array_length {
+	print transmute(s64) ptr;
 	print ptr^;
 	ptr += 1;
 }

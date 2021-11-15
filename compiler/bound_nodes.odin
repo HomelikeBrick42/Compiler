@@ -108,6 +108,7 @@ BoundExpression :: struct {
 		^BoundAddress,
 		^BoundDeref,
 		^BoundCast,
+		^BoundTransmute,
 		^BoundTrue,
 		^BoundFalse,
 		^BoundUnary,
@@ -154,6 +155,11 @@ BoundDeref :: struct {
 BoundCast :: struct {
 	using expression: BoundExpression,
 	castt: ^Cast,
+	operand: ^BoundExpression,
+}
+
+BoundTransmute :: struct {
+	using expression: BoundExpression,
 	operand: ^BoundExpression,
 }
 
@@ -362,6 +368,14 @@ BoundNode_Print :: proc(bound_node: ^BoundNode, indent: uint, builder: ^strings.
 					BoundNode_Print(castt.castt.to, indent, builder)
 					strings.write_string(builder, ") ")
 					BoundNode_Print(castt.operand, indent, builder)
+				}
+
+				case ^BoundTransmute: {
+					transmutee := e
+					strings.write_string(builder, "transmute(")
+					BoundNode_Print(transmutee.type, indent, builder)
+					strings.write_string(builder, ") ")
+					BoundNode_Print(transmutee.operand, indent, builder)
 				}
 
 				case ^BoundTrue: {

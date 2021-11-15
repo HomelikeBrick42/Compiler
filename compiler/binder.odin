@@ -541,6 +541,10 @@ Binder_IsAssignable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 			return false
 		}
 
+		case ^BoundTransmute: {
+			return false
+		}
+
 		case ^BoundTrue: {
 			return false
 		}
@@ -587,6 +591,10 @@ Binder_IsAddresable :: proc(binder: ^Binder, expression: ^BoundExpression) -> bo
 		}
 
 		case ^BoundCast: {
+			return false
+		}
+
+		case ^BoundTransmute: {
 			return false
 		}
 
@@ -697,6 +705,14 @@ Binder_BindAsType :: proc(binder: ^Binder, expression: ^AstExpression, parent_sc
 			return nil, Error{
 				loc     = castt.cast_token.loc,
 				message = "Cannot convert cast to type",
+			}
+		}
+
+		case ^AstTransmute: {
+			transmutee := e
+			return nil, Error{
+				loc     = transmutee.transmute_token.loc,
+				message = "Cannot convert transmute to type",
 			}
 		}
 
@@ -1077,6 +1093,28 @@ Binder_BindExpression :: proc(binder: ^Binder, expression: ^AstExpression, sugge
 			bound_cast.castt = cast_type
 			bound_cast.operand = bound_operand
 			return bound_cast, nil
+		}
+
+		case ^AstTransmute: {
+			transmutee := e
+			type := Binder_BindAsType(binder, transmutee.type, parent_statement.parent_scope) or_return
+			bound_operand := Binder_BindExpression(binder, transmutee.operand, type, parent_statement) or_return
+			if bound_operand.type == type {
+				return bound_operand, nil
+			}
+			if bound_operand.type.size != type.size {
+				return nil, Error{
+					loc     = transmutee.transmute_token.loc,
+					message = fmt.tprintf(
+						"Cannot transmute type '{}' to type '{}' because they are not the same size",
+						BoundNode_ToString(bound_operand.type, context.temp_allocator),
+						BoundNode_ToString(type, context.temp_allocator),
+					),
+				}
+			}
+			bound_transmute := BoundExpression_Create(BoundTransmute, type, parent_statement)
+			bound_transmute.operand = bound_operand
+			return bound_transmute, nil
 		}
 
 		case ^AstTrue: {

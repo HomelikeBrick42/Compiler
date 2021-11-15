@@ -213,7 +213,7 @@ Parser_ParsePrimaryExpression :: proc(parser: ^Parser) -> (expression: ^AstExpre
 @(private="file")
 GetUnaryOperatorPrecedence :: proc(kind: TokenKind) -> uint {
 	#partial switch kind {
-		case .Plus, .Minus, .Caret, .Asterisk, .ExclamationMark, .OpenBracket, .CastKeyword: {
+		case .Plus, .Minus, .Caret, .Asterisk, .ExclamationMark, .OpenBracket, .CastKeyword, .TransmuteKeyword: {
 			return 6
 		}
 
@@ -274,6 +274,16 @@ Parser_ParseBinaryExpression :: proc(parser: ^Parser, parent_precedence: uint) -
 				Parser_ExpectToken(parser, .CloseParenthesis) or_return
 				castt.operand = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
 				expression = castt
+			}
+
+			case .TransmuteKeyword: {
+				transmutee := AstExpression_Create(AstTransmute)
+				transmutee.transmute_token = token
+				Parser_ExpectToken(parser, .OpenParenthesis) or_return
+				transmutee.type = Parser_ParseExpression(parser) or_return
+				Parser_ExpectToken(parser, .CloseParenthesis) or_return
+				transmutee.operand = Parser_ParseBinaryExpression(parser, unary_precedence) or_return
+				expression = transmutee
 			}
 
 			case .Caret: {
