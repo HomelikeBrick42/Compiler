@@ -5,6 +5,8 @@ import "core:strings"
 import "core:os"
 import "core:reflect"
 
+import "x64emit"
+
 SourceLoc :: struct {
 	path:     string,
 	source:   string,
@@ -83,19 +85,70 @@ main :: proc() {
 
 	// fmt.println(BoundNode_ToString(bound_file))
 
-	program: [dynamic]Instruction
-	EmitBytecode(bound_file, &program)
+	when true {
+		using x64emit
 
-	vm := VM_Create(program[:], 1024)
-	defer VM_Destroy(&vm)
+		emitter := Emitter_Create()
+		defer Emitter_Destroy(&emitter)
 
-	if error := VM_Run(&vm); error != nil {
-		fmt.eprintf("Virtual Machine Error: '{}'\n", error.(string))
-		os.exit(1)
+		for dest := Register.RAX; dest <= Register.R15; dest += auto_cast 1 {
+			EmitREX(&emitter, dest, auto_cast 0)
+			EmitAddToRegister(&emitter)
+			EmitDisplacedIndirectRIP(&emitter, auto_cast dest, 0x12345678)
+
+			EmitREX(&emitter, dest, auto_cast 0)
+			EmitAddToRegister(&emitter)
+			EmitDisplaced(&emitter, auto_cast dest, 0x12345678)
+
+			for src := Register.RAX; src <= Register.R15; src += auto_cast 1 {
+				EmitREX(&emitter, dest, src)
+				EmitAddToRegister(&emitter)
+				EmitDirect(&emitter, auto_cast dest, src)
+
+				EmitREXIndexed(&emitter, dest, src, dest)
+				EmitAddToRegister(&emitter)
+				EmitIndexedIndirect(&emitter, auto_cast dest, src, dest, .X4)
+
+				if src != .RSP && src != .RBP {
+					EmitREX(&emitter, dest, src)
+					EmitAddToRegister(&emitter)
+					EmitIndirect(&emitter, auto_cast dest, src)
+
+					EmitREX(&emitter, dest, src)
+					EmitAddToRegister(&emitter)
+					EmitByteDisplacedIndirect(&emitter, auto_cast dest, src, 0x12)
+
+					EmitREX(&emitter, dest, src)
+					EmitAddToRegister(&emitter)
+					EmitDisplacedIndirect(&emitter, auto_cast dest, src, 0x12345678)
+				}
+				if src == .RSP {
+					EmitREX(&emitter, dest, src)
+					EmitAddToRegister(&emitter)
+					EmitIndexedIndirect(&emitter, auto_cast dest, src, .RSP, .X1)
+				}
+			}
+		}
+
+		for bite in emitter.code {
+			fmt.printf("%02X ", bite)
+		}
+		fmt.println()
+	} else {
+		program: [dynamic]Instruction
+		EmitBytecode(bound_file, &program)
+
+		vm := VM_Create(program[:], 1024)
+		defer VM_Destroy(&vm)
+
+		if error := VM_Run(&vm); error != nil {
+			fmt.eprintf("Virtual Machine Error: '{}'\n", error.(string))
+			os.exit(1)
+		}
 	}
 }
 
-EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
+EmitBytecodePtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 	#partial switch n in node.kind {
 		case ^BoundStatement: {
 			statement := n
@@ -110,7 +163,7 @@ EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 				}
 
 				case: {
-					assert(false, "unreachable BoundStatement default case in EmitPtr")
+					assert(false, "unreachable BoundStatement default case in EmitBytecodePtr")
 				}
 			}
 		}
@@ -129,7 +182,7 @@ EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 
 				case ^BoundArrayIndex: {
 					array_index := e
-					EmitPtr(array_index.operand, program)
+					EmitBytecodePtr(array_index.operand, program)
 					EmitBytecode(array_index.index, program)
 					assert(array_index.index.type.size == size_of(uintptr))
 					append(program, InstPushPtr{ cast(uintptr) array_index.type.size })
@@ -143,13 +196,13 @@ EmitPtr :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 				}
 
 				case: {
-					assert(false, "unreachable BoundExpression default case in EmitPtr")
+					assert(false, "unreachable BoundExpression default case in EmitBytecodePtr")
 				}
 			}
 		}
 
 		case: {
-			assert(false, "unreachable BoundNode default case in EmitPtr")
+			assert(false, "unreachable BoundNode default case in EmitBytecodePtr")
 		}
 	}
 }
@@ -178,7 +231,7 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 					declaration := s
 					if declaration.value != nil {
 						EmitBytecode(declaration.value, program)
-						EmitPtr(declaration, program)
+						EmitBytecodePtr(declaration, program)
 						append(program, InstStorePtr{ declaration.type.size })
 					}
 				}
@@ -186,7 +239,7 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 				case ^BoundAssignment: {
 					assignment := s
 					if assignment.binary_operator != nil {
-						EmitPtr(assignment.operand, program)
+						EmitBytecodePtr(assignment.operand, program)
 						append(program, InstLoadPtr{ assignment.operand.type.size })
 					}
 					EmitBytecode(assignment.value, program)
@@ -198,7 +251,7 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 							append(program, operation)
 						}
 					}
-					EmitPtr(assignment.operand, program)
+					EmitBytecodePtr(assignment.operand, program)
 					append(program, InstStorePtr{ assignment.operand.type.size })
 				}
 
@@ -271,7 +324,7 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 			switch e in expression.expression_kind {
 				case ^BoundName: {
 					name := e
-					EmitPtr(name, program)
+					EmitBytecodePtr(name, program)
 					append(program, InstLoadPtr{ name.type.size })
 				}
 
@@ -296,13 +349,13 @@ EmitBytecode :: proc(node: ^BoundNode, program: ^[dynamic]Instruction) {
 
 				case ^BoundArrayIndex: {
 					array_index := e
-					EmitPtr(array_index, program)
+					EmitBytecodePtr(array_index, program)
 					append(program, InstLoadPtr{ array_index.type.size })
 				}
 
 				case ^BoundAddress: {
 					address := e
-					EmitPtr(address.operand, program)
+					EmitBytecodePtr(address.operand, program)
 				}
 
 				case ^BoundDeref: {
