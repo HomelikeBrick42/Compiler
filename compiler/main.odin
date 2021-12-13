@@ -91,45 +91,61 @@ main :: proc() {
 		emitter := Emitter_Create()
 		defer Emitter_Destroy(&emitter)
 
-		for dest := Register.RAX; dest <= Register.R15; dest += auto_cast 1 {
-			EmitREX(&emitter, dest, auto_cast 0)
-			EmitAddToRegister(&emitter)
-			EmitDisplacedIndirectRIP(&emitter, auto_cast dest, 0x12345678)
+		for destination in Register {
+			EmitOperationRegisterImmediate(&emitter, .Add, destination, 0xDEADBEEF)
 
-			EmitREX(&emitter, dest, auto_cast 0)
-			EmitAddToRegister(&emitter)
-			EmitDisplaced(&emitter, auto_cast dest, 0x12345678)
-
-			for src := Register.RAX; src <= Register.R15; src += auto_cast 1 {
-				EmitREX(&emitter, dest, src)
-				EmitAddToRegister(&emitter)
-				EmitDirect(&emitter, auto_cast dest, src)
-
-				EmitREXIndexed(&emitter, dest, src, dest)
-				EmitAddToRegister(&emitter)
-				EmitIndexedIndirect(&emitter, auto_cast dest, src, dest, .X4)
-
-				if src != .RSP && src != .RBP {
-					EmitREX(&emitter, dest, src)
-					EmitAddToRegister(&emitter)
-					EmitIndirect(&emitter, auto_cast dest, src)
-
-					EmitREX(&emitter, dest, src)
-					EmitAddToRegister(&emitter)
-					EmitByteDisplacedIndirect(&emitter, auto_cast dest, src, 0x12)
-
-					EmitREX(&emitter, dest, src)
-					EmitAddToRegister(&emitter)
-					EmitDisplacedIndirect(&emitter, auto_cast dest, src, 0x12345678)
+			if (destination & cast(Register) 7) != .RSP {
+				EmitOperationMemoryByteDisplacedImmediate(&emitter, .Add, destination, 0x12, 0xDEADBEEF)
+				EmitOperationMemoryDisplacedImmediate(&emitter, .Add, destination, 0x12345678, 0xDEADBEEF)
+				if (destination & cast(Register) 7) != .RBP {
+					EmitOperationSIBImmediate(&emitter, .Add, destination, .X4, .R8, 0xDEADBEEF)
 				}
-				if src == .RSP {
-					EmitREX(&emitter, dest, src)
-					EmitAddToRegister(&emitter)
-					EmitIndexedIndirect(&emitter, auto_cast dest, src, .RSP, .X1)
+			}
+
+			EmitREX(&emitter, destination, auto_cast 0)
+			EmitAddRegister(&emitter)
+			EmitDisplacedIndirectRIP(&emitter, auto_cast destination, 0x12345678)
+
+			EmitREX(&emitter, destination, auto_cast 0)
+			EmitAddRegister(&emitter)
+			EmitDisplaced(&emitter, auto_cast destination, 0x12345678)
+
+			for source in Register {
+				EmitOperationRegisterRegister(&emitter, .Add, destination, source)
+
+				if (source & cast(Register) 7) != .RBP {
+					EmitOperationRegisterSIB(&emitter, .Add, destination, source, .X4, destination)
+					EmitOperationRegisterSIBByteDisplaced(&emitter, .Add, destination, source, .X4, destination, 0x12)
+					EmitOperationRegisterSIBDisplaced(&emitter, .Add, destination, source, .X4, destination, 0x12345678)
+				}
+
+				if (destination & cast(Register) 7) != .RBP {
+					EmitOperationSIBRegister(&emitter, .Add, destination, .X4, source, source)
+					EmitOperationSIBByteDisplacedRegister(&emitter, .Add, destination, .X4, source, 0x12, source)
+					EmitOperationSIBDisplacedRegister(&emitter, .Add, destination, .X4, source, 0x12345678, source)
+				}
+
+				if (source & cast(Register) 7) != .RSP && (source & cast(Register) 7) != .RBP {
+					EmitOperationRegisterMemory(&emitter, .Add, destination, source)
+					EmitOperationRegisterMemoryByteDisplaced(&emitter, .Add, destination, source, 0x12)
+					EmitOperationRegisterMemoryDisplaced(&emitter, .Add, destination, source, 0x12345678)
+				}
+
+				if (destination & cast(Register) 7) != .RSP && (destination & cast(Register) 7) != .RBP {
+					EmitOperationMemoryRegister(&emitter, .Add, destination, source)
+					EmitOperationMemoryByteDisplacedRegister(&emitter, .Add, destination, 0x12, source)
+					EmitOperationMemoryDisplacedRegister(&emitter, .Add, destination, 0x12345678, source)
+				}
+
+				if (source & cast(Register) 7) == .RSP {
+					EmitREXIndexed(&emitter, destination, source, .RSP)
+					EmitAddRegister(&emitter)
+					EmitIndexedIndirect(&emitter, auto_cast destination, source, .RSP, .X1)
 				}
 			}
 		}
 
+		fmt.printf("Generated {} bytes\n", len(emitter.code))
 		for bite in emitter.code {
 			fmt.printf("%02X ", bite)
 		}
